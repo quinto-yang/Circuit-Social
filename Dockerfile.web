@@ -1,0 +1,44 @@
+FROM node:20-alpine AS builder
+
+WORKDIR /app
+
+ARG NEXT_PUBLIC_API_ORIGIN=http://localhost:4000
+ENV NEXT_PUBLIC_API_ORIGIN=${NEXT_PUBLIC_API_ORIGIN}
+
+COPY package.json package-lock.json ./
+COPY apps/api/package.json apps/api/package.json
+COPY apps/web/package.json apps/web/package.json
+COPY packages/sdk-js/package.json packages/sdk-js/package.json
+COPY packages/sdk-react/package.json packages/sdk-react/package.json
+COPY examples/integration-demo/package.json examples/integration-demo/package.json
+
+RUN npm ci
+
+COPY . .
+RUN npm run build --workspace @cx/web
+
+FROM node:20-alpine AS runner
+
+WORKDIR /app
+ENV NODE_ENV=production
+ENV PORT=3000
+
+ARG NEXT_PUBLIC_API_ORIGIN=http://localhost:4000
+ENV NEXT_PUBLIC_API_ORIGIN=${NEXT_PUBLIC_API_ORIGIN}
+
+COPY package.json package-lock.json ./
+COPY apps/api/package.json apps/api/package.json
+COPY apps/web/package.json apps/web/package.json
+COPY packages/sdk-js/package.json packages/sdk-js/package.json
+COPY packages/sdk-react/package.json packages/sdk-react/package.json
+COPY examples/integration-demo/package.json examples/integration-demo/package.json
+
+RUN npm ci --omit=dev
+
+COPY --from=builder /app/apps/web/.next apps/web/.next
+COPY --from=builder /app/apps/web/public apps/web/public
+COPY --from=builder /app/apps/web/next.config.ts apps/web/next.config.ts
+
+EXPOSE 3000
+
+CMD ["npm", "run", "start", "--workspace", "@cx/web", "--", "--port", "3000"]

@@ -1,0 +1,208 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             Int                  @id @default(autoincrement())
+  nickname       String
+  bio            String               @default("")
+  avatarUrl      String?
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+  wallets        WalletAccount[]
+  sessions       Session[]
+  sentRequests   FriendRequest[]      @relation("sentRequests")
+  receivedReqs   FriendRequest[]      @relation("receivedRequests")
+  memberships    ConversationMember[]
+  messages       Message[]
+  moments        Moment[]
+  uploads        Upload[]
+  reports        Report[]
+}
+
+model WalletAccount {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  chainId     Int
+  chainLabel  String
+  address     String
+  isPrimary   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([chainId, address])
+}
+
+model Session {
+  id        String   @id
+  userId    Int
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model FriendRequest {
+  id         Int      @id @default(autoincrement())
+  fromUserId Int
+  toUserId   Int
+  status     String   @default("pending")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  fromUser   User     @relation("sentRequests", fields: [fromUserId], references: [id], onDelete: Cascade)
+  toUser     User     @relation("receivedRequests", fields: [toUserId], references: [id], onDelete: Cascade)
+}
+
+model Friendship {
+  id         Int      @id @default(autoincrement())
+  userLowId  Int
+  userHighId Int
+  createdAt  DateTime @default(now())
+
+  @@unique([userLowId, userHighId])
+}
+
+model Conversation {
+  id           Int                  @id @default(autoincrement())
+  kind         String
+  title        String
+  inviteCode   String?              @unique
+  ownerId      Int?
+  createdAt    DateTime             @default(now())
+  members      ConversationMember[]
+  messages     Message[]
+}
+
+model ConversationMember {
+  id                Int       @id @default(autoincrement())
+  conversationId    Int
+  userId            Int
+  role              String    @default("member")
+  lastReadMessageId Int?
+  mutedUntil        DateTime?
+  joinedAt          DateTime  @default(now())
+  conversation      Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([conversationId, userId])
+}
+
+model Message {
+  id             Int              @id @default(autoincrement())
+  conversationId Int
+  senderId       Int
+  content        String
+  createdAt      DateTime         @default(now())
+  conversation   Conversation     @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender         User             @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  mentions       MessageMention[]
+}
+
+model MessageMention {
+  id        Int     @id @default(autoincrement())
+  messageId Int
+  userId    Int
+  message   Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, userId])
+}
+
+model Moment {
+  id         Int           @id @default(autoincrement())
+  authorId   Int
+  content    String
+  createdAt  DateTime      @default(now())
+  author     User          @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  images     MomentImage[]
+}
+
+model MomentImage {
+  id       Int    @id @default(autoincrement())
+  momentId Int
+  uploadId Int
+  moment   Moment @relation(fields: [momentId], references: [id], onDelete: Cascade)
+  upload   Upload @relation(fields: [uploadId], references: [id], onDelete: Cascade)
+
+  @@unique([momentId, uploadId])
+}
+
+model Upload {
+  id         Int           @id @default(autoincrement())
+  userId     Int
+  url        String
+  fileName   String
+  mimeType   String
+  size       Int
+  createdAt  DateTime      @default(now())
+  user       User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  momentRefs MomentImage[]
+}
+
+model Report {
+  id         Int      @id @default(autoincrement())
+  reporterId Int
+  kind       String
+  targetId   Int
+  reason     String
+  createdAt  DateTime @default(now())
+  reporter   User     @relation(fields: [reporterId], references: [id], onDelete: Cascade)
+}
+
+model AuditLog {
+  id         Int      @id @default(autoincrement())
+  actorId     Int?
+  action      String
+  targetType  String
+  targetId    String
+  detail      String?
+  createdAt   DateTime @default(now())
+}
+
+model TenantApp {
+  id          Int            @id @default(autoincrement())
+  ownerUserId Int
+  name        String
+  chainPolicy String[]
+  callbackUrl String?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  domains     TenantDomain[]
+  keys        TenantKey[]
+  branding    TenantBranding?
+}
+
+model TenantDomain {
+  id        Int       @id @default(autoincrement())
+  appId     Int
+  domain    String
+  createdAt DateTime  @default(now())
+  app       TenantApp @relation(fields: [appId], references: [id], onDelete: Cascade)
+
+  @@unique([appId, domain])
+}
+
+model TenantKey {
+  id            Int       @id @default(autoincrement())
+  appId         Int
+  keyId         String
+  status        String    @default("active")
+  lastRotatedAt DateTime?
+  createdAt     DateTime  @default(now())
+  app           TenantApp @relation(fields: [appId], references: [id], onDelete: Cascade)
+
+  @@unique([appId, keyId])
+}
+
+model TenantBranding {
+  id          Int       @id @default(autoincrement())
+  appId       Int       @unique
+  logoUrl     String?
+  themeColor  String?
+  displayName String?
+  updatedAt   DateTime  @updatedAt
+  app         TenantApp @relation(fields: [appId], references: [id], onDelete: Cascade)
+}

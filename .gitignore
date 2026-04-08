@@ -1,0 +1,17 @@
+node_modules
+.next
+.next-test
+.next-typecheck
+dist
+coverage
+.env
+.env.local
+apps/api/uploads
+apps/api/.data
+apps/web/.next-test
+apps/web/.next-typecheck
+playwright-report
+test-results
+.playwright
+*.log
+.DS_Store

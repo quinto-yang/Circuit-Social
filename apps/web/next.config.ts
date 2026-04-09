@@ -2,8 +2,10 @@ import type { NextConfig } from "next";
 import path from "node:path";
 
 const apiOrigin = process.env.NEXT_PUBLIC_API_ORIGIN ?? "http://127.0.0.1:4000";
+const internalApiOrigin = process.env.INTERNAL_API_ORIGIN ?? "http://127.0.0.1:4000";
 const localApiOrigins = ["http://127.0.0.1:4000", "http://localhost:4000"];
 const distDir = process.env.NEXT_DIST_DIR ?? ".next";
+const connectApiOrigins = [apiOrigin, ...localApiOrigins].filter(Boolean);
 
 const securityHeaders = [
   {
@@ -13,7 +15,7 @@ const securityHeaders = [
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       "font-src 'self' https://fonts.gstatic.com",
       "img-src 'self' data: blob: http: https:",
-      `connect-src 'self' ${[apiOrigin, ...localApiOrigins].join(" ")} ws: wss: https://rpc.walletconnect.com https://explorer-api.walletconnect.com`,
+      `connect-src 'self' ${connectApiOrigins.join(" ")} ws: wss: https://rpc.walletconnect.com https://explorer-api.walletconnect.com`,
       "script-src 'self' 'unsafe-eval' 'unsafe-inline'",
       "frame-ancestors 'none'",
       "base-uri 'self'",
@@ -50,6 +52,18 @@ const nextConfig: NextConfig = {
       {
         source: "/(.*)",
         headers: securityHeaders
+      }
+    ];
+  },
+  async rewrites() {
+    return [
+      {
+        source: "/api/:path*",
+        destination: `${internalApiOrigin}/api/:path*`
+      },
+      {
+        source: "/socket.io/:path*",
+        destination: `${internalApiOrigin}/socket.io/:path*`
       }
     ];
   }

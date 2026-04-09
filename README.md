@@ -74,6 +74,8 @@ docker compose up --build
 
 **完整流程**（架构说明、重建镜像、环境变量、P3005 与卷、生产注意）见 **[docs/docker-deployment.md](docs/docker-deployment.md)**。
 
+**Hugging Face Spaces（Docker）部署**见 **[docs/huggingface-docker.md](docs/huggingface-docker.md)**。
+
 **摘要**
 
 - 可复制 [.env.docker.example](.env.docker.example) 为 `.env` 自定义端口与域名相关变量。

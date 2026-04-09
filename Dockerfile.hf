@@ -1,0 +1,68 @@
+# syntax=docker/dockerfile:1
+
+FROM node:20-alpine AS deps
+WORKDIR /app
+
+RUN apk add --no-cache python3 make g++
+
+ENV NPM_CONFIG_LOGLEVEL=error
+ENV NPM_CONFIG_FUND=false
+ENV NPM_CONFIG_AUDIT=false
+ENV NPM_CONFIG_UPDATE_NOTIFIER=false
+
+COPY package.json package-lock.json ./
+COPY apps/api/package.json apps/api/package.json
+COPY apps/web/package.json apps/web/package.json
+COPY packages/sdk-js/package.json packages/sdk-js/package.json
+COPY packages/sdk-react/package.json packages/sdk-react/package.json
+COPY examples/integration-demo/package.json examples/integration-demo/package.json
+
+RUN --mount=type=cache,target=/root/.npm npm ci
+
+FROM deps AS api-builder
+COPY . .
+RUN npm run build --workspace @cx/api
+
+FROM deps AS web-builder
+ARG NEXT_PUBLIC_API_ORIGIN=same-origin
+ENV NEXT_PUBLIC_API_ORIGIN=${NEXT_PUBLIC_API_ORIGIN}
+ENV NEXT_TELEMETRY_DISABLED=1
+COPY . .
+RUN npm run build --workspace @cx/web
+
+FROM node:20-alpine AS runner
+WORKDIR /app
+
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV NPM_CONFIG_LOGLEVEL=error
+ENV NPM_CONFIG_FUND=false
+ENV NPM_CONFIG_AUDIT=false
+ENV NPM_CONFIG_UPDATE_NOTIFIER=false
+
+# HF Spaces Docker runtime expects app listening on $PORT (default 7860)
+ENV PORT=7860
+ENV API_PORT=4000
+ENV WEB_ORIGIN=https://localhost
+ENV NEXT_PUBLIC_API_ORIGIN=same-origin
+ENV INTERNAL_API_ORIGIN=http://127.0.0.1:4000
+
+# Use api-builder node_modules to include Prisma generated client.
+COPY --from=api-builder /app/node_modules node_modules
+COPY --from=deps /app/package.json package.json
+COPY --from=deps /app/package-lock.json package-lock.json
+
+COPY --from=api-builder /app/apps/api/dist apps/api/dist
+COPY --from=api-builder /app/apps/api/package.json apps/api/package.json
+COPY --from=api-builder /app/apps/api/prisma apps/api/prisma
+
+COPY --from=web-builder /app/apps/web/.next apps/web/.next
+COPY --from=web-builder /app/apps/web/package.json apps/web/package.json
+COPY --from=web-builder /app/apps/web/next.config.ts apps/web/next.config.ts
+
+COPY --from=deps /app/scripts /app/scripts
+
+RUN chmod +x /app/scripts/start-hf.sh
+
+EXPOSE 7860
+CMD ["/app/scripts/start-hf.sh"]

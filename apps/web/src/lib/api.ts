@@ -35,12 +35,14 @@ function buildApiError(input: {
 }
 
 async function request<T>(path: string, init?: RequestInit & { timeoutMs?: number }): Promise<T> {
+  const apiBase = webConfig.apiOrigin.replace(/\/+$/, "");
+  const requestUrl = `${apiBase}/api${path}`;
   const timeoutMs = init?.timeoutMs ?? DEFAULT_REQUEST_TIMEOUT_MS;
   const { timeoutMs: _timeout, ...fetchInit } = init ?? {};
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    const response = await fetch(`${webConfig.apiOrigin}/api${path}`, {
+    const response = await fetch(requestUrl, {
       ...fetchInit,
       credentials: "include",
       signal: controller.signal,
@@ -65,7 +67,7 @@ async function request<T>(path: string, init?: RequestInit & { timeoutMs?: numbe
   } catch (error) {
     if (error instanceof Error && error.name === "AbortError") {
       throw new ApiError({
-        message: `连接后端超时（${timeoutMs / 1000}s），请确认 API 已启动且 NEXT_PUBLIC_API_ORIGIN 正确（默认 http://localhost:4000）`,
+        message: `连接后端超时（${timeoutMs / 1000}s），请确认 API 已启动且 NEXT_PUBLIC_API_ORIGIN 正确（默认 http://localhost:4000，HF 可用 same-origin）`,
         code: "REQUEST_TIMEOUT",
         path
       });

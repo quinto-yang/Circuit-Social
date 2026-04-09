@@ -1,6 +1,10 @@
 function resolveApiOrigin() {
-  if (process.env.NEXT_PUBLIC_API_ORIGIN) {
-    return process.env.NEXT_PUBLIC_API_ORIGIN;
+  const configured = process.env.NEXT_PUBLIC_API_ORIGIN?.trim();
+  if (configured === "same-origin") {
+    return "";
+  }
+  if (configured) {
+    return configured;
   }
   if (typeof window !== "undefined") {
     return `${window.location.protocol}//${window.location.hostname}:4000`;

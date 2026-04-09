@@ -59,10 +59,13 @@ export function useRealtimeSync({
       return;
     }
     prevHadSessionRef.current = true;
+    const isHuggingFaceSpace =
+      typeof window !== "undefined" && window.location.hostname.endsWith(".hf.space");
+    const transports = isHuggingFaceSpace ? ["polling"] : ["websocket", "polling"];
 
     const socket = io(apiOrigin, {
       withCredentials: true,
-      transports: ["websocket", "polling"]
+      transports
     });
     socketRef.current = socket;
 

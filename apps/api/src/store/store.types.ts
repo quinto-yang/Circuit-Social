@@ -1,3 +1,32 @@
+export type SiteBannerSlot = "chats-top" | "contacts-middle" | "discover-menu-top" | "moments-feed-top";
+
+export type SiteBannerItem = {
+  titleZh: string;
+  titleEn: string;
+  descriptionZh: string;
+  descriptionEn: string;
+};
+
+export type SiteDiscoverLoungeItem = {
+  name: string;
+  members: string;
+  activeZh: string;
+  activeEn: string;
+};
+
+/** 对前端公开的运行时站点开关（不含密钥） */
+export type SitePublicSettings = {
+  enableSolanaLogin: boolean;
+  adsEnabled: boolean;
+  appName: string;
+  contactEmail: string;
+  contactWeChat: string;
+  contactTelegram: string;
+  discoverTags: string[];
+  discoverLounges: SiteDiscoverLoungeItem[];
+  banners: Record<SiteBannerSlot, SiteBannerItem>;
+};
+
 export type WalletRecord = {
   id: number;
   userId: number;
@@ -86,6 +115,15 @@ export type MomentRecord = {
   authorId: number;
   content: string;
   uploadIds: number[];
+  createdAt: string;
+};
+
+export type MomentCommentRecord = {
+  id: number;
+  momentId: number;
+  authorId: number;
+  content: string;
+  parentCommentId: number | null;
   createdAt: string;
 };
 
@@ -193,4 +231,22 @@ export type MomentView = {
   author: PublicUser;
   images: UploadRecord[];
   mine: boolean;
+  likeCount?: number;
+  commentCount?: number;
+  likedByMe?: boolean;
+};
+
+export type MomentCommentView = {
+  id: number;
+  momentId: number;
+  content: string;
+  createdAt: string;
+  parentCommentId: number | null;
+  author: PublicUser;
+  mine: boolean;
+  canDelete: boolean;
+  likeCount?: number;
+  likedByMe?: boolean;
+  pinned?: boolean;
+  replies: MomentCommentView[];
 };

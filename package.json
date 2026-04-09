@@ -30,5 +30,10 @@
     "@playwright/test": "^1.54.2",
     "cross-env": "^7.0.3",
     "dotenv": "^16.6.1"
+  },
+  "overrides": {
+    "@walletconnect/ethereum-provider": "2.23.9",
+    "@walletconnect/sign-client": "2.23.9",
+    "@walletconnect/universal-provider": "2.23.9"
   }
 }

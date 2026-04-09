@@ -27,6 +27,15 @@ Source of truth: `apps/api/src/common/error-codes.ts`
 - `SIGNER_ADDRESS_MISMATCH`: signer address does not match nonce address
 - `SIGNER_CHAIN_ID_MISMATCH`: signer chain id does not match nonce chain id
 - `SOLANA_INVALID_PAYLOAD`: Solana payload is malformed
+- `SOLANA_DISABLED`: Solana login/bind attempted while disabled by server / admin settings
+
+## Admin / Guard Error Codes
+
+管理接口（`/api/admin/*`）由 `AdminAuthGuard` 与统一 `HttpErrorFilter` 返回：
+
+- `ADMIN_UNAUTHORIZED`：未提供或错误的 `Authorization: Bearer` / `X-Admin-Token`（HTTP 401）
+- `ADMIN_TOKEN_EMPTY`：`POST /api/admin/token` 提交的新密钥为空（HTTP 400）
+- `ADMIN_TOKEN_TOO_SHORT`：`POST /api/admin/token` 新密钥长度不足（HTTP 400）
 
 ## Frontend Mapping
 

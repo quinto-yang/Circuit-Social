@@ -2,6 +2,7 @@ import { Injectable } from "@nestjs/common";
 import type { Server } from "socket.io";
 
 import type { ConversationSummary, MessageView, MomentView } from "../store/store.types";
+import type { NotificationRealtimePayload } from "../notifications/notifications.types";
 
 @Injectable()
 export class RealtimeEventsService {
@@ -34,5 +35,9 @@ export class RealtimeEventsService {
     userIds.forEach((userId) => {
       this.server?.to(`user:${userId}`).emit("moment:new", payload);
     });
+  }
+
+  emitNotification(userId: number, payload: NotificationRealtimePayload) {
+    this.server?.to(`user:${userId}`).emit("notification:new", payload);
   }
 }

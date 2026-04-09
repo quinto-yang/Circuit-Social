@@ -1,0 +1,12 @@
+.git
+.next
+.next-test
+.next-typecheck
+node_modules
+playwright-report
+test-results
+apps/web/.next
+apps/web/.next-test
+apps/web/.next-typecheck
+apps/api/dist
+**/*.log

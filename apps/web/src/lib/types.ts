@@ -1,5 +1,25 @@
 export type TabKey = "chats" | "contacts" | "discover" | "me";
 
+export type NotificationKind = "like" | "comment" | "reply" | "mention";
+
+export type NotificationItem = {
+  id: number;
+  kind: NotificationKind;
+  createdAt: string;
+  readAt: string | null;
+  actor: {
+    id: number;
+    nickname: string;
+    avatarUrl: string | null;
+  };
+  momentId: number | null;
+  commentId: number | null;
+  preview: {
+    moment: string | null;
+    comment: string | null;
+  };
+};
+
 export type UserProfile = {
   id: number;
   nickname: string;
@@ -91,4 +111,36 @@ export type MomentView = {
   author: UserProfile;
   images: UploadAsset[];
   mine: boolean;
+  likeCount?: number;
+  commentCount?: number;
+  likedByMe?: boolean;
+};
+
+export type MomentCommentView = {
+  id: number;
+  momentId: number;
+  content: string;
+  createdAt: string;
+  parentCommentId: number | null;
+  author: UserProfile;
+  mine: boolean;
+  canDelete: boolean;
+  likeCount?: number;
+  likedByMe?: boolean;
+  pinned?: boolean;
+  replies: MomentCommentView[];
+};
+
+/** Row from GET /discover/hot — group is server Conversation shape (not always full ConversationSummary). */
+export type DiscoverHotGroupRow = {
+  id: number;
+  score: number;
+  reason: string;
+  group: {
+    id: number;
+    kind: string;
+    title: string;
+    inviteCode: string | null;
+    ownerId: number | null;
+  };
 };

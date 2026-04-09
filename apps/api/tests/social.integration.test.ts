@@ -49,7 +49,7 @@ describe("social integration", () => {
 
     const guideRequests = await guide.get("/api/friend-requests").expect(200);
     const pending = guideRequests.body.incoming[0];
-    expect(pending.from.nickname).toMatch(/^Builder /);
+    expect(pending.from.nickname).toBe("111111");
 
     await guide
       .post(`/api/friend-requests/${pending.id}/respond`)

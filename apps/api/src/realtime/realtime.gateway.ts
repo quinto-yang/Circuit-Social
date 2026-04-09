@@ -37,9 +37,6 @@ export class RealtimeGateway implements OnGatewayConnection {
     this.authService = authService;
     this.store = store;
     this.realtimeEvents = realtimeEvents;
-    this.handleConnection = this.handleConnection.bind(this);
-    this.subscribeConversation = this.subscribeConversation.bind(this);
-    this.unsubscribeConversation = this.unsubscribeConversation.bind(this);
   }
 
   handleConnection(client: Socket) {

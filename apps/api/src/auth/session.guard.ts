@@ -11,9 +11,7 @@ import type { AuthenticatedRequest } from "./auth.types";
 
 @Injectable()
 export class SessionGuard implements CanActivate {
-  constructor(@Inject(AuthService) private readonly authService: AuthService) {
-    this.canActivate = this.canActivate.bind(this);
-  }
+  constructor(@Inject(AuthService) private readonly authService: AuthService) {}
 
   canActivate(context: ExecutionContext) {
     const request = context.switchToHttp().getRequest<AuthenticatedRequest>();

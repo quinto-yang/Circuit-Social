@@ -34,6 +34,7 @@ const nextConfig: NextConfig = {
   distDir,
   reactStrictMode: true,
   transpilePackages: [],
+  devIndicators: false,
   webpack(config) {
     config.resolve ??= {};
     config.resolve.alias ??= {};

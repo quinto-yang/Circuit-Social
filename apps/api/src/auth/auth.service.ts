@@ -36,6 +36,12 @@ export class AuthService {
     intent: "login" | "bind";
   }) {
     const chainType = input.chainType ?? "evm";
+    if (chainType === "solana" && !this.store.getSitePublicSettings().enableSolanaLogin) {
+      throw new BadRequestException({
+        message: "Solana 登录未启用",
+        code: AUTH_ERROR_CODES.SOLANA_DISABLED
+      });
+    }
     const adapter = this.identityService.getAdapter(chainType);
     if (!adapter.supportsChain(input.chainId)) {
       throw new BadRequestException({
@@ -60,6 +66,12 @@ export class AuthService {
   async verifyLogin(input: VerifyInput) {
     const chainType = input.chainType ?? "evm";
     if (chainType === "solana") {
+      if (!this.store.getSitePublicSettings().enableSolanaLogin) {
+        throw new BadRequestException({
+          message: "Solana 登录未启用",
+          code: AUTH_ERROR_CODES.SOLANA_DISABLED
+        });
+      }
       return this.verifySolanaLogin(input);
     }
     if (chainType !== "evm") {
@@ -104,6 +116,12 @@ export class AuthService {
   async bindWallet(userId: number, input: VerifyInput) {
     const chainType = input.chainType ?? "evm";
     if (chainType === "solana") {
+      if (!this.store.getSitePublicSettings().enableSolanaLogin) {
+        throw new BadRequestException({
+          message: "Solana 登录未启用",
+          code: AUTH_ERROR_CODES.SOLANA_DISABLED
+        });
+      }
       return this.bindSolanaWallet({ ...input, userId });
     }
     if (chainType !== "evm") {

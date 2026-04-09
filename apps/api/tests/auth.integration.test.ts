@@ -87,7 +87,7 @@ describe("auth integration", () => {
       chainType: "solana"
     });
     expect(response.status).toBe(201);
-    expect(response.body.user.nickname).toMatch(/^Builder /);
+    expect(response.body.user.nickname).toBe(address.slice(-6));
     expect(response.body.wallets[0].chainLabel).toBe("Solana Mainnet");
   });
 
@@ -151,7 +151,8 @@ describe("auth integration", () => {
 
     expect(verifyResponse.status).toBe(201);
     expect(verifyResponse.headers["set-cookie"]?.join(";")).toContain("cx_sid=");
-    expect(verifyResponse.body.user.nickname).toMatch(/^Builder /);
+    const expectedNick = testAccounts.alpha.address.toLowerCase().replace(/^0x/, "").slice(-6);
+    expect(verifyResponse.body.user.nickname).toBe(expectedNick);
     expect(verifyResponse.body.wallets).toHaveLength(1);
 
     const me = await agent.get("/api/me").expect(200);

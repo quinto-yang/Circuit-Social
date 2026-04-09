@@ -9,10 +9,7 @@ export class TestSupportController {
   constructor(
     @Inject(AuthService) private readonly authService: AuthService,
     @Inject(MemoryStoreService) private readonly store: MemoryStoreService
-  ) {
-    this.reset = this.reset.bind(this);
-    this.createSession = this.createSession.bind(this);
-  }
+  ) {}
 
   @Post("reset")
   reset() {

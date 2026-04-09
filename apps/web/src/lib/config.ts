@@ -13,7 +13,6 @@ export const webConfig = {
     return resolveApiOrigin();
   },
   walletConnectProjectId: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID ?? "",
-  appName: process.env.NEXT_PUBLIC_APP_NAME ?? "Circuit Social",
-  adsEnabled: process.env.NEXT_PUBLIC_ADS_ENABLED === "true",
-  enableSolanaLogin: process.env.NEXT_PUBLIC_ENABLE_SOLANA_LOGIN === "true"
+  /** 构建时展示名；运行时站点名以 /api/public-config 为准 */
+  appName: process.env.NEXT_PUBLIC_APP_NAME ?? "Circuit Social"
 } as const;

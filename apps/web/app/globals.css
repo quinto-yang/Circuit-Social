@@ -17,6 +17,82 @@
   --jade-deep: #0d8053;
   --alert: #ff6b5e;
   --shadow: 0 24px 60px rgba(15, 34, 28, 0.12);
+
+  --app-bg:
+    radial-gradient(circle at top left, rgba(25, 195, 125, 0.18), transparent 32%),
+    radial-gradient(circle at 85% 18%, rgba(86, 182, 255, 0.18), transparent 24%),
+    linear-gradient(180deg, #f7faf5 0%, var(--bg) 100%);
+  --grain: radial-gradient(circle at 1px 1px, rgba(17, 19, 26, 0.035) 1px, transparent 0);
+
+  /* Login shell (AppShell unauth) */
+  --login-base: #f3f6f4;
+  --login-fg: #11131a;
+  --login-bg:
+    radial-gradient(circle at top, rgba(32, 201, 151, 0.14), transparent 34%),
+    radial-gradient(circle at 85% 18%, rgba(102, 183, 255, 0.12), transparent 22%),
+    linear-gradient(180deg, #f7faf5 0%, #eaf0ec 55%, #e2ebe6 100%);
+  --login-glow: radial-gradient(circle, rgba(39, 230, 149, 0.08) 0%, transparent 62%);
+  --login-glass-bg: rgba(255, 255, 255, 0.55);
+  --login-glass-bg-strong: rgba(255, 255, 255, 0.7);
+  --login-glass-border: rgba(17, 19, 26, 0.12);
+  --login-glass-text: rgba(17, 19, 26, 0.92);
+  --login-glass-muted: rgba(17, 19, 26, 0.55);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    color-scheme: dark;
+    --bg: #0b1115;
+    --bg-deep: #081118;
+    --surface: rgba(10, 16, 22, 0.72);
+    --surface-strong: rgba(10, 16, 22, 0.92);
+    --ink: rgba(255, 255, 255, 0.92);
+    --muted: rgba(255, 255, 255, 0.62);
+    --line: rgba(255, 255, 255, 0.08);
+    --shadow: 0 28px 70px rgba(0, 0, 0, 0.28);
+    --app-bg:
+      radial-gradient(circle at top, rgba(32, 201, 151, 0.18), transparent 30%),
+      radial-gradient(circle at 85% 18%, rgba(102, 183, 255, 0.14), transparent 18%),
+      linear-gradient(180deg, #102127 0%, #091117 45%, #05090d 100%);
+    --grain: radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.045) 1px, transparent 0);
+
+    --login-base: #081118;
+    --login-fg: rgba(255, 255, 255, 0.92);
+    --login-bg: var(--app-bg);
+    --login-glow: radial-gradient(circle, rgba(39, 230, 149, 0.12) 0%, transparent 62%);
+    --login-glass-bg: rgba(255, 255, 255, 0.06);
+    --login-glass-bg-strong: rgba(255, 255, 255, 0.1);
+    --login-glass-border: rgba(255, 255, 255, 0.14);
+    --login-glass-text: rgba(255, 255, 255, 0.92);
+    --login-glass-muted: rgba(255, 255, 255, 0.58);
+  }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0b1115;
+  --bg-deep: #081118;
+  --surface: rgba(10, 16, 22, 0.72);
+  --surface-strong: rgba(10, 16, 22, 0.92);
+  --ink: rgba(255, 255, 255, 0.92);
+  --muted: rgba(255, 255, 255, 0.62);
+  --line: rgba(255, 255, 255, 0.08);
+  --shadow: 0 28px 70px rgba(0, 0, 0, 0.28);
+  --app-bg:
+    radial-gradient(circle at top, rgba(32, 201, 151, 0.18), transparent 30%),
+    radial-gradient(circle at 85% 18%, rgba(102, 183, 255, 0.14), transparent 18%),
+    linear-gradient(180deg, #102127 0%, #091117 45%, #05090d 100%);
+  --grain: radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.045) 1px, transparent 0);
+
+  --login-base: #081118;
+  --login-fg: rgba(255, 255, 255, 0.92);
+  --login-bg: var(--app-bg);
+  --login-glow: radial-gradient(circle, rgba(39, 230, 149, 0.12) 0%, transparent 62%);
+  --login-glass-bg: rgba(255, 255, 255, 0.06);
+  --login-glass-bg-strong: rgba(255, 255, 255, 0.1);
+  --login-glass-border: rgba(255, 255, 255, 0.14);
+  --login-glass-text: rgba(255, 255, 255, 0.92);
+  --login-glass-muted: rgba(255, 255, 255, 0.58);
 }
 
 * {
@@ -27,10 +103,7 @@ html,
 body {
   min-height: 100%;
   margin: 0;
-  background:
-    radial-gradient(circle at top left, rgba(25, 195, 125, 0.18), transparent 32%),
-    radial-gradient(circle at 85% 18%, rgba(86, 182, 255, 0.18), transparent 24%),
-    linear-gradient(180deg, #f7faf5 0%, var(--bg) 100%);
+  background: var(--app-bg);
   color: var(--ink);
   font-family: var(--font-body), sans-serif;
 }
@@ -40,7 +113,7 @@ body::before {
   position: fixed;
   inset: 0;
   pointer-events: none;
-  background-image: radial-gradient(circle at 1px 1px, rgba(17, 19, 26, 0.035) 1px, transparent 0);
+  background-image: var(--grain);
   background-size: 18px 18px;
   opacity: 0.35;
 }
@@ -54,4 +127,43 @@ button,
 input,
 textarea {
   font: inherit;
+}
+
+@keyframes message-pop {
+  0% {
+    opacity: 0;
+    transform: translateY(6px) scale(0.98);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes jump-hint {
+  0%,
+  100% {
+    transform: translateY(0);
+    box-shadow: 0 12px 30px rgba(15, 23, 42, 0.12);
+  }
+  50% {
+    transform: translateY(-2px);
+    box-shadow: 0 16px 36px rgba(15, 23, 42, 0.18);
+  }
+}
+
+@keyframes skeleton-shimmer {
+  0% {
+    opacity: 0.45;
+  }
+  50% {
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 0.45;
+  }
+}
+
+.skeleton-line {
+  animation: skeleton-shimmer 1.2s ease-in-out infinite;
 }

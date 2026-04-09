@@ -27,14 +27,7 @@ export class AuthController {
     @Inject(AuthService) private readonly authService: AuthService,
     @Inject(MemoryStoreService) private readonly store: MemoryStoreService,
     @Inject(DidResolverService) private readonly didResolverService: DidResolverService
-  ) {
-    this.createNonce = this.createNonce.bind(this);
-    this.verify = this.verify.bind(this);
-    this.logout = this.logout.bind(this);
-    this.me = this.me.bind(this);
-    this.bindWallet = this.bindWallet.bind(this);
-    this.removeWallet = this.removeWallet.bind(this);
-  }
+  ) {}
 
   @Post("auth/nonce")
   createNonce(

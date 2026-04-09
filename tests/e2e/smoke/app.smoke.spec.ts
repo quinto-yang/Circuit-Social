@@ -55,6 +55,7 @@ test("publishes a moment and updates profile", async ({
   authenticatedPage: page
 }) => {
   const momentText = `moment-${Date.now()}`;
+  const commentText = `comment-${Date.now()}`;
   const nickname = `Pilot-${Date.now().toString().slice(-4)}`;
 
   await page.getByRole("button", { name: "发现", exact: true }).click();
@@ -70,13 +71,20 @@ test("publishes a moment and updates profile", async ({
   ).toBeVisible();
   await expect(page.getByPlaceholder("分享新鲜事、群组动态或产品进展...")).toHaveValue("");
 
+  await page.getByRole("button", { name: /评论/ }).first().click();
+  await page.getByPlaceholder("写下你的评论...").first().fill(commentText);
+  await page.getByRole("button", { name: "发表评论" }).first().click();
+  await expect(page.getByText(commentText, { exact: true }).first()).toBeVisible();
+  await page.getByRole("button", { name: "删除" }).first().click();
+  await expect(page.getByText(commentText, { exact: true })).toHaveCount(0);
+
   await page.getByRole("button", { name: "我的", exact: true }).click();
   await page.getByRole("button", { name: "编辑资料" }).click();
   await page.getByPlaceholder("输入显示昵称").fill(nickname);
   await page
-    .getByPlaceholder("补充你在社区的角色和关注方向")
+    .getByPlaceholder(/例如：我是 Circuit Builder|e\.g\. Circuit builder/i)
     .fill("Playwright regression profile");
-  await page.getByRole("button", { name: "保存资料" }).click();
+  await page.getByRole("button", { name: /保存资料|^Save$/ }).click();
 
   await expect(page.getByText(nickname, { exact: true }).first()).toBeVisible();
 });

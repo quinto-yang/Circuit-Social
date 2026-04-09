@@ -8,32 +8,62 @@ datasource db {
 }
 
 model User {
-  id             Int                  @id @default(autoincrement())
-  nickname       String
-  bio            String               @default("")
-  avatarUrl      String?
-  createdAt      DateTime             @default(now())
-  updatedAt      DateTime             @updatedAt
-  wallets        WalletAccount[]
-  sessions       Session[]
-  sentRequests   FriendRequest[]      @relation("sentRequests")
-  receivedReqs   FriendRequest[]      @relation("receivedRequests")
-  memberships    ConversationMember[]
-  messages       Message[]
-  moments        Moment[]
-  uploads        Upload[]
-  reports        Report[]
+  id                Int                  @id @default(autoincrement())
+  nickname          String
+  bio               String               @default("")
+  avatarUrl         String?
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
+  wallets           WalletAccount[]
+  sessions          Session[]
+  sentRequests      FriendRequest[]      @relation("sentRequests")
+  receivedReqs      FriendRequest[]      @relation("receivedRequests")
+  memberships       ConversationMember[]
+  messages          Message[]
+  moments           Moment[]
+  momentLikes       MomentLike[]
+  momentComments    MomentComment[]
+  commentLikes      MomentCommentLike[]
+  pinnedComments    MomentCommentPin[]   @relation("PinnedByUser")
+  notifications     Notification[]       @relation("NotificationsForUser")
+  notificationsByMe Notification[]       @relation("NotificationsByActor")
+  uploads           Upload[]
+  reports           Report[]
+  pointLedger       PointLedger[]
+  taskProgress      TaskProgress[]
+}
+
+model Notification {
+  id        Int       @id @default(autoincrement())
+  userId    Int
+  actorId   Int
+  kind      String
+  momentId  Int?
+  commentId Int?
+  extra     Json?
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user    User           @relation("NotificationsForUser", fields: [userId], references: [id], onDelete: Cascade)
+  actor   User           @relation("NotificationsByActor", fields: [actorId], references: [id], onDelete: Cascade)
+  moment  Moment?        @relation(fields: [momentId], references: [id], onDelete: Cascade)
+  comment MomentComment? @relation(fields: [commentId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([userId, readAt])
+  @@index([momentId, createdAt])
+  @@index([commentId, createdAt])
 }
 
 model WalletAccount {
-  id          Int      @id @default(autoincrement())
-  userId      Int
-  chainId     Int
-  chainLabel  String
-  address     String
-  isPrimary   Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id         Int      @id @default(autoincrement())
+  userId     Int
+  chainId    Int
+  chainLabel String
+  address    String
+  isPrimary  Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([chainId, address])
 }
@@ -67,26 +97,26 @@ model Friendship {
 }
 
 model Conversation {
-  id           Int                  @id @default(autoincrement())
-  kind         String
-  title        String
-  inviteCode   String?              @unique
-  ownerId      Int?
-  createdAt    DateTime             @default(now())
-  members      ConversationMember[]
-  messages     Message[]
+  id         Int                  @id @default(autoincrement())
+  kind       String
+  title      String
+  inviteCode String?              @unique
+  ownerId    Int?
+  createdAt  DateTime             @default(now())
+  members    ConversationMember[]
+  messages   Message[]
 }
 
 model ConversationMember {
-  id                Int       @id @default(autoincrement())
+  id                Int          @id @default(autoincrement())
   conversationId    Int
   userId            Int
-  role              String    @default("member")
+  role              String       @default("member")
   lastReadMessageId Int?
   mutedUntil        DateTime?
-  joinedAt          DateTime  @default(now())
+  joinedAt          DateTime     @default(now())
   conversation      Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user              User         @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([conversationId, userId])
 }
@@ -112,12 +142,75 @@ model MessageMention {
 }
 
 model Moment {
-  id         Int           @id @default(autoincrement())
-  authorId   Int
-  content    String
-  createdAt  DateTime      @default(now())
-  author     User          @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  images     MomentImage[]
+  id            Int               @id @default(autoincrement())
+  authorId      Int
+  content       String
+  createdAt     DateTime          @default(now())
+  author        User              @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  images        MomentImage[]
+  comments      MomentComment[]
+  likes         MomentLike[]
+  pinnedComment MomentCommentPin?
+  notifications Notification[]
+
+  @@index([authorId, createdAt])
+}
+
+model MomentLike {
+  id        Int      @id @default(autoincrement())
+  momentId  Int
+  userId    Int
+  createdAt DateTime @default(now())
+  moment    Moment   @relation(fields: [momentId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([momentId, userId])
+  @@index([userId, createdAt])
+}
+
+model MomentComment {
+  id              Int                 @id @default(autoincrement())
+  momentId        Int
+  authorId        Int
+  content         String
+  parentCommentId Int?
+  createdAt       DateTime            @default(now())
+  moment          Moment              @relation(fields: [momentId], references: [id], onDelete: Cascade)
+  author          User                @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  parent          MomentComment?      @relation("MomentCommentReplies", fields: [parentCommentId], references: [id], onDelete: Cascade)
+  replies         MomentComment[]     @relation("MomentCommentReplies")
+  likes           MomentCommentLike[]
+  pinnedIn        MomentCommentPin?
+  notifications   Notification[]
+
+  @@index([momentId, createdAt])
+  @@index([authorId, createdAt])
+  @@index([parentCommentId])
+}
+
+model MomentCommentLike {
+  id        Int           @id @default(autoincrement())
+  commentId Int
+  userId    Int
+  createdAt DateTime      @default(now())
+  comment   MomentComment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([commentId, userId])
+  @@index([userId, createdAt])
+}
+
+model MomentCommentPin {
+  id             Int           @id @default(autoincrement())
+  momentId       Int           @unique
+  commentId      Int           @unique
+  pinnedByUserId Int
+  pinnedAt       DateTime      @default(now())
+  moment         Moment        @relation(fields: [momentId], references: [id], onDelete: Cascade)
+  comment        MomentComment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  pinnedBy       User          @relation("PinnedByUser", fields: [pinnedByUserId], references: [id], onDelete: Cascade)
+
+  @@index([pinnedByUserId, pinnedAt])
 }
 
 model MomentImage {
@@ -154,22 +247,65 @@ model Report {
 
 model AuditLog {
   id         Int      @id @default(autoincrement())
-  actorId     Int?
-  action      String
-  targetType  String
-  targetId    String
-  detail      String?
-  createdAt   DateTime @default(now())
+  actorId    Int?
+  action     String
+  targetType String
+  targetId   String
+  detail     String?
+  createdAt  DateTime @default(now())
+}
+
+model PointLedger {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  delta     Int
+  reason    String
+  refType   String?
+  refId     String?
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, reason, refType, refId])
+  @@index([userId, createdAt])
+  @@index([refType, refId])
+}
+
+model TaskDefinition {
+  key           String         @id
+  titleZh       String
+  titleEn       String
+  descriptionZh String
+  descriptionEn String
+  target        Int            @default(1)
+  points        Int            @default(0)
+  enabled       Boolean        @default(true)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  progresses    TaskProgress[]
+}
+
+model TaskProgress {
+  id          Int            @id @default(autoincrement())
+  userId      Int
+  taskKey     String
+  progress    Int            @default(0)
+  completedAt DateTime?
+  updatedAt   DateTime       @updatedAt
+  user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  task        TaskDefinition @relation(fields: [taskKey], references: [key], onDelete: Cascade)
+
+  @@unique([userId, taskKey])
+  @@index([userId, updatedAt])
 }
 
 model TenantApp {
-  id          Int            @id @default(autoincrement())
+  id          Int             @id @default(autoincrement())
   ownerUserId Int
   name        String
   chainPolicy String[]
   callbackUrl String?
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
   domains     TenantDomain[]
   keys        TenantKey[]
   branding    TenantBranding?
@@ -205,4 +341,10 @@ model TenantBranding {
   displayName String?
   updatedAt   DateTime  @updatedAt
   app         TenantApp @relation(fields: [appId], references: [id], onDelete: Cascade)
+}
+
+model SiteSettings {
+  id        Int      @id @default(1)
+  data      Json
+  updatedAt DateTime @updatedAt
 }

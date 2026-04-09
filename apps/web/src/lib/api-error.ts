@@ -1,5 +1,4 @@
 import { ApiError } from "./api";
-import { webConfig } from "./config";
 
 export const AUTH_ERROR_CODES = {
   UNKNOWN_API_ERROR: "UNKNOWN_API_ERROR",
@@ -14,7 +13,8 @@ export const AUTH_ERROR_CODES = {
   SIGNER_ADDRESS_MISMATCH: "SIGNER_ADDRESS_MISMATCH",
   SIGNER_CHAIN_ID_MISMATCH: "SIGNER_CHAIN_ID_MISMATCH",
   SOLANA_NOT_READY: "SOLANA_NOT_READY",
-  SOLANA_INVALID_PAYLOAD: "SOLANA_INVALID_PAYLOAD"
+  SOLANA_INVALID_PAYLOAD: "SOLANA_INVALID_PAYLOAD",
+  SOLANA_DISABLED: "SOLANA_DISABLED"
 } as const;
 
 export function mapApiError(error: unknown, fallback = "请求失败") {
@@ -26,11 +26,12 @@ export function mapApiError(error: unknown, fallback = "请求失败") {
     return fallback;
   }
 
+  if (code === AUTH_ERROR_CODES.SOLANA_DISABLED) {
+    return "Solana 登录未启用，请使用 EVM 钱包登录。";
+  }
+
   if (code === AUTH_ERROR_CODES.SOLANA_NOT_READY) {
-    if (!webConfig.enableSolanaLogin) {
-      return "Solana 登录灰度未开启，请先使用 EVM 钱包登录（或将 NEXT_PUBLIC_ENABLE_SOLANA_LOGIN=true 后重启 Web）。";
-    }
-    return "Solana 登录/绑定即将支持，目前暂不可用，请先使用 EVM 钱包。";
+    return "Solana 登录/绑定暂不可用，请先使用 EVM 钱包。";
   }
 
   if (code === AUTH_ERROR_CODES.SOLANA_INVALID_PAYLOAD) {

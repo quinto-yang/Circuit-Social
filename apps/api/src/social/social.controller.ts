@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Inject,
   Param,
@@ -26,30 +27,7 @@ export class SocialController {
   constructor(
     @Inject(SocialService) private readonly socialService: SocialService,
     @Inject(DidResolverService) private readonly didResolverService: DidResolverService
-  ) {
-    this.friends = this.friends.bind(this);
-    this.friendRequests = this.friendRequests.bind(this);
-    this.createFriendRequest = this.createFriendRequest.bind(this);
-    this.respondFriendRequest = this.respondFriendRequest.bind(this);
-    this.conversations = this.conversations.bind(this);
-    this.startDm = this.startDm.bind(this);
-    this.createGroup = this.createGroup.bind(this);
-    this.joinGroup = this.joinGroup.bind(this);
-    this.group = this.group.bind(this);
-    this.groupMembers = this.groupMembers.bind(this);
-    this.kickMember = this.kickMember.bind(this);
-    this.muteMember = this.muteMember.bind(this);
-    this.leaveGroup = this.leaveGroup.bind(this);
-    this.messages = this.messages.bind(this);
-    this.conversationParticipants = this.conversationParticipants.bind(this);
-    this.sendMessage = this.sendMessage.bind(this);
-    this.markRead = this.markRead.bind(this);
-    this.moments = this.moments.bind(this);
-    this.createMoment = this.createMoment.bind(this);
-    this.uploadImage = this.uploadImage.bind(this);
-    this.report = this.report.bind(this);
-    this.updateProfile = this.updateProfile.bind(this);
-  }
+  ) {}
 
   @Get("friends")
   friends(@Req() request: AuthenticatedRequest) {
@@ -289,6 +267,99 @@ export class SocialController {
         content: body.content,
         uploadIds: body.uploadIds ?? []
       })
+    };
+  }
+
+  @Get("moments/:momentId/comments")
+  momentComments(
+    @Req() request: AuthenticatedRequest,
+    @Param("momentId", ParseIntPipe) momentId: number
+  ) {
+    return {
+      ok: true,
+      ...this.socialService.listMomentComments(request.authUserId, momentId)
+    };
+  }
+
+  @Get("discover/hot")
+  discoverHot(@Req() request: AuthenticatedRequest) {
+    return this.socialService.discoverHot(request.authUserId);
+  }
+
+  @Get("tasks")
+  tasks(@Req() request: AuthenticatedRequest) {
+    return this.socialService.listTasks(request.authUserId);
+  }
+
+  @Post("tasks/:taskKey/claim")
+  claimTask(@Req() request: AuthenticatedRequest, @Param("taskKey") taskKey: string) {
+    return this.socialService.claimTask(request.authUserId, taskKey);
+  }
+
+  @Get("points")
+  points(@Req() request: AuthenticatedRequest) {
+    return this.socialService.getPoints(request.authUserId);
+  }
+
+  @Post("moments/:momentId/likes")
+  toggleMomentLike(
+    @Req() request: AuthenticatedRequest,
+    @Param("momentId", ParseIntPipe) momentId: number
+  ) {
+    return {
+      ok: true,
+      ...this.socialService.toggleMomentLike(request.authUserId, momentId)
+    };
+  }
+
+  @Post("moments/:momentId/comments")
+  createMomentComment(
+    @Req() request: AuthenticatedRequest,
+    @Param("momentId", ParseIntPipe) momentId: number,
+    @Body() body: { content: string; parentCommentId?: number | null }
+  ) {
+    return {
+      ok: true,
+      ...this.socialService.createMomentComment(request.authUserId, momentId, {
+        content: body.content,
+        parentCommentId: body.parentCommentId ?? null
+      })
+    };
+  }
+
+  @Post("moments/:momentId/comments/:commentId/likes")
+  toggleMomentCommentLike(
+    @Req() request: AuthenticatedRequest,
+    @Param("momentId", ParseIntPipe) momentId: number,
+    @Param("commentId", ParseIntPipe) commentId: number
+  ) {
+    return {
+      ok: true,
+      ...this.socialService.toggleMomentCommentLike(request.authUserId, momentId, commentId)
+    };
+  }
+
+  @Post("moments/:momentId/comments/:commentId/pin")
+  toggleMomentCommentPin(
+    @Req() request: AuthenticatedRequest,
+    @Param("momentId", ParseIntPipe) momentId: number,
+    @Param("commentId", ParseIntPipe) commentId: number
+  ) {
+    return {
+      ok: true,
+      ...this.socialService.toggleMomentCommentPin(request.authUserId, momentId, commentId)
+    };
+  }
+
+  @Delete("moments/:momentId/comments/:commentId")
+  deleteMomentComment(
+    @Req() request: AuthenticatedRequest,
+    @Param("momentId", ParseIntPipe) momentId: number,
+    @Param("commentId", ParseIntPipe) commentId: number
+  ) {
+    return {
+      ok: true,
+      ...this.socialService.deleteMomentComment(request.authUserId, momentId, commentId)
     };
   }
 

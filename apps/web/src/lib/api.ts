@@ -3,6 +3,9 @@ import { webConfig } from "./config";
 type ErrorPayload = { ok?: boolean; error?: string; errorCode?: string } | null;
 const UNKNOWN_API_ERROR = "UNKNOWN_API_ERROR";
 
+/** 避免初始化时 fetch 无限挂起导致首页一直 Loading（见 AppShell session === undefined） */
+const DEFAULT_REQUEST_TIMEOUT_MS = 20_000;
+
 export class ApiError extends Error {
   code?: string;
   status?: number;
@@ -31,28 +34,46 @@ function buildApiError(input: {
   });
 }
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(`${webConfig.apiOrigin}/api${path}`, {
-    credentials: "include",
-    headers: {
-      ...(init?.body instanceof FormData ? {} : { "Content-Type": "application/json" }),
-      ...(init?.headers ?? {})
-    },
-    ...init
-  });
-
-  const data = (await response.json().catch(() => null)) as ErrorPayload;
-
-  if (!response.ok || data?.ok === false) {
-    throw buildApiError({
-      data,
-      fallbackMessage: "请求失败",
-      status: response.status,
-      path
+async function request<T>(path: string, init?: RequestInit & { timeoutMs?: number }): Promise<T> {
+  const timeoutMs = init?.timeoutMs ?? DEFAULT_REQUEST_TIMEOUT_MS;
+  const { timeoutMs: _timeout, ...fetchInit } = init ?? {};
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const response = await fetch(`${webConfig.apiOrigin}/api${path}`, {
+      ...fetchInit,
+      credentials: "include",
+      signal: controller.signal,
+      headers: {
+        ...(fetchInit?.body instanceof FormData ? {} : { "Content-Type": "application/json" }),
+        ...(fetchInit?.headers ?? {})
+      }
     });
-  }
 
-  return data as T;
+    const data = (await response.json().catch(() => null)) as ErrorPayload;
+
+    if (!response.ok || data?.ok === false) {
+      throw buildApiError({
+        data,
+        fallbackMessage: "请求失败",
+        status: response.status,
+        path
+      });
+    }
+
+    return data as T;
+  } catch (error) {
+    if (error instanceof Error && error.name === "AbortError") {
+      throw new ApiError({
+        message: `连接后端超时（${timeoutMs / 1000}s），请确认 API 已启动且 NEXT_PUBLIC_API_ORIGIN 正确（默认 http://localhost:4000）`,
+        code: "REQUEST_TIMEOUT",
+        path
+      });
+    }
+    throw error;
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 export const api = {

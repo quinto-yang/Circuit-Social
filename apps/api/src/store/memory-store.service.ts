@@ -10,6 +10,8 @@ import type {
   FriendRequestView,
   MessageRecord,
   MessageView,
+  MomentCommentRecord,
+  MomentCommentView,
   MomentRecord,
   MomentView,
   NonceRecord,
@@ -20,6 +22,9 @@ import type {
   TenantBrandingRecord,
   TenantDomainRecord,
   TenantKeyRecord,
+  SitePublicSettings,
+  SiteBannerSlot,
+  SiteBannerItem,
   UploadRecord,
   UserRecord,
   WalletRecord
@@ -33,6 +38,13 @@ const TEST_WALLET_PRESETS = {
   guide: "0x000000000000000000000000000000000000beef"
 } as const;
 
+const SITE_BANNER_SLOTS: SiteBannerSlot[] = [
+  "chats-top",
+  "contacts-middle",
+  "discover-menu-top",
+  "moments-feed-top"
+];
+
 export type TestSessionPreset = keyof typeof TEST_WALLET_PRESETS;
 
 @Injectable()
@@ -45,6 +57,7 @@ export class MemoryStoreService {
   private messageSeq = 1;
   private uploadSeq = 1;
   private momentSeq = 1;
+  private momentCommentSeq = 1;
   private reportSeq = 1;
   private auditSeq = 1;
   private tenantAppSeq = 1;
@@ -62,15 +75,215 @@ export class MemoryStoreService {
   private readonly messages: MessageRecord[] = [];
   private readonly uploads: UploadRecord[] = [];
   private readonly moments: MomentRecord[] = [];
+  private readonly momentComments: MomentCommentRecord[] = [];
+  private readonly momentLikes: Array<{ momentId: number; userId: number; createdAt: string }> = [];
+  private readonly momentCommentLikes: Array<{ commentId: number; userId: number; createdAt: string }> = [];
+  private momentCommentPins = new Map<number, { momentId: number; commentId: number; pinnedByUserId: number; pinnedAt: string }>();
+  private readonly pointLedger: Array<{ userId: number; delta: number; reason: string; refType?: string; refId?: string; createdAt: string }> = [];
+  private readonly taskDefinitions: Array<{
+    key: string;
+    titleZh: string;
+    titleEn: string;
+    descriptionZh: string;
+    descriptionEn: string;
+    target: number;
+    points: number;
+    enabled: boolean;
+  }> = [];
+  private readonly taskProgress = new Map<string, { userId: number; taskKey: string; progress: number; completedAt: string | null; updatedAt: string }>();
   private readonly reports: ReportRecord[] = [];
   private readonly auditLogs: AuditLogRecord[] = [];
   private readonly tenantApps: TenantAppRecord[] = [];
   private readonly tenantDomains: TenantDomainRecord[] = [];
   private readonly tenantKeys: TenantKeyRecord[] = [];
   private readonly tenantBrandings: TenantBrandingRecord[] = [];
+  private sitePublicSettings: SitePublicSettings;
 
   constructor() {
+    this.sitePublicSettings = this.readSiteSettingsFromEnv();
     this.seedSystemData();
+  }
+
+  private readSiteSettingsFromEnv(): SitePublicSettings {
+    const name = process.env.APP_PUBLIC_NAME?.trim();
+    return {
+      enableSolanaLogin: process.env.ENABLE_SOLANA_LOGIN === "true",
+      adsEnabled: process.env.ADS_ENABLED === "true",
+      appName: name && name.length > 0 ? name : "Circuit Social",
+      contactEmail: "support@circuit.social",
+      contactWeChat: "CircuitSocial",
+      contactTelegram: "@CircuitSocial",
+      discoverTags: ["兴趣圈", "Builder", "活动", "Mini Apps"],
+      discoverLounges: [
+        { name: "Builder Lounge", members: "1.2k", activeZh: "高活跃", activeEn: "High activity" },
+        { name: "Circuit Growth", members: "820", activeZh: "上升中", activeEn: "Rising" },
+        { name: "Chain Study Club", members: "540", activeZh: "稳定讨论", activeEn: "Steady" }
+      ],
+      banners: {
+        "chats-top": {
+          titleZh: "Circuit Social：链上身份驱动的社交协作",
+          titleEn: "Circuit Social: On-chain identity for social collaboration",
+          descriptionZh: "用钱包完成身份登录，在同一入口管理私聊、群聊与社区协作。",
+          descriptionEn: "Sign in with wallet and manage DMs, groups, and collaboration in one place."
+        },
+        "contacts-middle": {
+          titleZh: "一键连接关系与群组网络",
+          titleEn: "Connect people and groups quickly",
+          descriptionZh: "支持加好友、建群、入群与群管理，快速搭建稳定的协作圈层。",
+          descriptionEn: "Add friends, create/join groups, and manage members efficiently."
+        },
+        "discover-menu-top": {
+          titleZh: "发现页：内容分发与社区增长入口",
+          titleEn: "Discover: content and growth entry",
+          descriptionZh: "朋友圈支持图文发布、互动扩散与关系沉淀，帮助内容触达更多人。",
+          descriptionEn: "Moments supports image/text posting and social engagement."
+        },
+        "moments-feed-top": {
+          titleZh: "朋友圈：轻内容表达 + 社交关系沉淀",
+          titleEn: "Moments: lightweight content with social growth",
+          descriptionZh: "选图即上传、实时展示进度，发布后即时触达好友与社群。",
+          descriptionEn: "Upload with progress and reach friends/community instantly."
+        }
+      }
+    };
+  }
+
+  getSitePublicSettings(): SitePublicSettings {
+    return { ...this.sitePublicSettings };
+  }
+
+  updateSitePublicSettings(
+    patch: Partial<Omit<SitePublicSettings, "banners">> & {
+      banners?: Partial<Record<SiteBannerSlot, Partial<SiteBannerItem>>>;
+    }
+  ): SitePublicSettings {
+    const next = { ...this.sitePublicSettings };
+    if (typeof patch.enableSolanaLogin === "boolean") {
+      next.enableSolanaLogin = patch.enableSolanaLogin;
+    }
+    if (typeof patch.adsEnabled === "boolean") {
+      next.adsEnabled = patch.adsEnabled;
+    }
+    if (typeof patch.appName === "string") {
+      const trimmed = patch.appName.trim();
+      if (trimmed.length > 0) {
+        next.appName = trimmed;
+      }
+    }
+    if (typeof patch.contactEmail === "string") {
+      const trimmed = patch.contactEmail.trim();
+      if (trimmed.length > 0) next.contactEmail = trimmed;
+    }
+    if (typeof patch.contactWeChat === "string") {
+      const trimmed = patch.contactWeChat.trim();
+      if (trimmed.length > 0) next.contactWeChat = trimmed;
+    }
+    if (typeof patch.contactTelegram === "string") {
+      const trimmed = patch.contactTelegram.trim();
+      if (trimmed.length > 0) next.contactTelegram = trimmed;
+    }
+    if (Array.isArray(patch.discoverTags)) {
+      const nextTags = patch.discoverTags
+        .map((item) => (typeof item === "string" ? item.trim() : ""))
+        .filter((item) => item.length > 0);
+      if (nextTags.length > 0) {
+        next.discoverTags = nextTags;
+      }
+    }
+    if (Array.isArray(patch.discoverLounges)) {
+      const lounges = patch.discoverLounges
+        .map((item) => ({
+          name: typeof item?.name === "string" ? item.name.trim() : "",
+          members: typeof item?.members === "string" ? item.members.trim() : "",
+          activeZh: typeof item?.activeZh === "string" ? item.activeZh.trim() : "",
+          activeEn: typeof item?.activeEn === "string" ? item.activeEn.trim() : ""
+        }))
+        .filter((item) => item.name && item.members && item.activeZh && item.activeEn);
+      if (lounges.length > 0) {
+        next.discoverLounges = lounges;
+      }
+    }
+    if (patch.banners && typeof patch.banners === "object") {
+      for (const slot of SITE_BANNER_SLOTS) {
+        const value = patch.banners[slot];
+        if (!value || typeof value !== "object") continue;
+        const nextValue = {
+          titleZh: typeof value.titleZh === "string" ? value.titleZh.trim() : "",
+          titleEn: typeof value.titleEn === "string" ? value.titleEn.trim() : "",
+          descriptionZh: typeof value.descriptionZh === "string" ? value.descriptionZh.trim() : "",
+          descriptionEn: typeof value.descriptionEn === "string" ? value.descriptionEn.trim() : ""
+        };
+        if (
+          nextValue.titleZh &&
+          nextValue.titleEn &&
+          nextValue.descriptionZh &&
+          nextValue.descriptionEn
+        ) {
+          next.banners[slot] = nextValue;
+        }
+      }
+    }
+    this.sitePublicSettings = next;
+    return this.getSitePublicSettings();
+  }
+
+  /** 仅管理接口：内存仓储条目计数（开发/运维用） */
+  getAdminOverviewCounts() {
+    return {
+      users: this.users.length,
+      wallets: this.wallets.length,
+      activeSessions: this.sessions.size,
+      conversations: this.conversations.length,
+      messages: this.messages.length,
+      moments: this.moments.length,
+      momentComments: this.momentComments.length,
+      friendRequestsPending: this.friendRequests.filter((item) => item.status === "pending").length,
+      reports: this.reports.length,
+      tenantApps: this.tenantApps.length,
+      auditLogEntries: this.auditLogs.length
+    };
+  }
+
+  /** 最近 N 条审计日志（新在后），上限 100 */
+  listRecentAuditLogs(limit: number): AuditLogRecord[] {
+    const capped = Math.min(Math.max(1, Math.floor(limit)), 100);
+    if (this.auditLogs.length === 0) {
+      return [];
+    }
+    return this.auditLogs.slice(-capped);
+  }
+
+  listAuditLogs(input: {
+    action?: string;
+    targetType?: string;
+    startAt?: string;
+    endAt?: string;
+    offset: number;
+    limit: number;
+  }): { total: number; items: AuditLogRecord[] } {
+    const offset = Math.max(0, Math.floor(input.offset));
+    const limit = Math.min(Math.max(1, Math.floor(input.limit)), 100);
+    const action = input.action?.trim().toLowerCase();
+    const targetType = input.targetType?.trim().toLowerCase();
+    const startMs = input.startAt ? new Date(input.startAt).getTime() : null;
+    const endMs = input.endAt ? new Date(input.endAt).getTime() : null;
+
+    const filtered = this.auditLogs.filter((item) => {
+      if (action && !item.action.toLowerCase().includes(action)) return false;
+      if (targetType && !item.targetType.toLowerCase().includes(targetType)) return false;
+      const ts = new Date(item.createdAt).getTime();
+      if (startMs !== null && Number.isFinite(startMs) && ts < startMs) return false;
+      if (endMs !== null && Number.isFinite(endMs) && ts > endMs) return false;
+      return true;
+    });
+
+    const sorted = filtered.slice().sort((left, right) => {
+      if (left.id !== right.id) return right.id - left.id;
+      return new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime();
+    });
+    const total = sorted.length;
+    const items = sorted.slice(offset, offset + limit);
+    return { total, items };
   }
 
   reset() {
@@ -82,6 +295,7 @@ export class MemoryStoreService {
     this.messageSeq = 1;
     this.uploadSeq = 1;
     this.momentSeq = 1;
+    this.momentCommentSeq = 1;
     this.reportSeq = 1;
     this.auditSeq = 1;
     this.tenantAppSeq = 1;
@@ -99,6 +313,7 @@ export class MemoryStoreService {
     this.messages.length = 0;
     this.uploads.length = 0;
     this.moments.length = 0;
+    this.momentComments.length = 0;
     this.reports.length = 0;
     this.auditLogs.length = 0;
     this.tenantApps.length = 0;
@@ -106,6 +321,7 @@ export class MemoryStoreService {
     this.tenantKeys.length = 0;
     this.tenantBrandings.length = 0;
 
+    this.sitePublicSettings = this.readSiteSettingsFromEnv();
     this.seedSystemData();
   }
 
@@ -305,6 +521,149 @@ export class MemoryStoreService {
       uploadIds: [],
       createdAt: this.now()
     });
+
+    this.taskDefinitions.push(
+      {
+        key: "first_moment",
+        titleZh: "发布第一条动态",
+        titleEn: "Publish your first moment",
+        descriptionZh: "完成一次朋友圈发布。",
+        descriptionEn: "Create a moment post once.",
+        target: 1,
+        points: 10,
+        enabled: true
+      },
+      {
+        key: "first_like",
+        titleZh: "完成第一次点赞",
+        titleEn: "Give your first like",
+        descriptionZh: "对任意动态点一次赞。",
+        descriptionEn: "Like any moment once.",
+        target: 1,
+        points: 2,
+        enabled: true
+      },
+      {
+        key: "first_comment",
+        titleZh: "完成第一次评论",
+        titleEn: "Write your first comment",
+        descriptionZh: "对任意动态发一条评论。",
+        descriptionEn: "Comment on any moment once.",
+        target: 1,
+        points: 4,
+        enabled: true
+      },
+      {
+        key: "complete_profile",
+        titleZh: "完善个人资料",
+        titleEn: "Complete your profile",
+        descriptionZh: "设置头像，并填写昵称与简介。",
+        descriptionEn: "Set an avatar and fill nickname & bio.",
+        target: 1,
+        points: 8,
+        enabled: true
+      },
+      {
+        key: "join_group",
+        titleZh: "加入一个群聊",
+        titleEn: "Join a group",
+        descriptionZh: "加入任意群聊会话。",
+        descriptionEn: "Join any group conversation.",
+        target: 1,
+        points: 6,
+        enabled: true
+      }
+    );
+  }
+
+  private taskProgressKey(userId: number, taskKey: string) {
+    return `${userId}:${taskKey}`;
+  }
+
+  private getOrCreateTaskProgress(userId: number, taskKey: string) {
+    const key = this.taskProgressKey(userId, taskKey);
+    const existing = this.taskProgress.get(key);
+    if (existing) return existing;
+    const created = { userId, taskKey, progress: 0, completedAt: null as string | null, updatedAt: this.now() };
+    this.taskProgress.set(key, created);
+    return created;
+  }
+
+  listTasks(userId: number) {
+    const tasks = this.taskDefinitions
+      .filter((t) => t.enabled)
+      .map((def) => {
+        const prog = this.getOrCreateTaskProgress(userId, def.key);
+        const completed = Boolean(prog.completedAt) || prog.progress >= def.target;
+        const canClaim = completed && !this.pointLedger.some(
+          (row) => row.userId === userId && row.reason === "task.reward" && row.refType === "task" && row.refId === def.key
+        );
+        return {
+          key: def.key,
+          titleZh: def.titleZh,
+          titleEn: def.titleEn,
+          descriptionZh: def.descriptionZh,
+          descriptionEn: def.descriptionEn,
+          target: def.target,
+          points: def.points,
+          progress: Math.min(prog.progress, def.target),
+          completedAt: prog.completedAt,
+          canClaim
+        };
+      });
+    return { tasks };
+  }
+
+  claimTask(userId: number, taskKey: string) {
+    const def = this.taskDefinitions.find((t) => t.key === taskKey && t.enabled);
+    if (!def) throw new Error("任务不存在");
+    const prog = this.getOrCreateTaskProgress(userId, taskKey);
+    const completed = Boolean(prog.completedAt) || prog.progress >= def.target;
+    if (!completed) throw new Error("任务未完成");
+    const already = this.pointLedger.some(
+      (row) => row.userId === userId && row.reason === "task.reward" && row.refType === "task" && row.refId === taskKey
+    );
+    if (already) return { ok: true, claimed: false };
+    this.pointLedger.push({
+      userId,
+      delta: def.points,
+      reason: "task.reward",
+      refType: "task",
+      refId: taskKey,
+      createdAt: this.now()
+    });
+    return { ok: true, claimed: true, delta: def.points };
+  }
+
+  getPoints(userId: number) {
+    const rows = this.pointLedger.filter((r) => r.userId === userId).slice().reverse().slice(0, 30);
+    const total = this.pointLedger.filter((r) => r.userId === userId).reduce((sum, r) => sum + r.delta, 0);
+    return { total, ledger: rows };
+  }
+
+  bumpTaskProgress(userId: number, taskKey: string, amount: number) {
+    const def = this.taskDefinitions.find((t) => t.key === taskKey && t.enabled);
+    if (!def) return;
+    const prog = this.getOrCreateTaskProgress(userId, taskKey);
+    if (prog.completedAt) return;
+    prog.progress += amount;
+    prog.updatedAt = this.now();
+    if (prog.progress >= def.target) {
+      prog.completedAt = this.now();
+    }
+  }
+
+  awardPointsOnce(input: { userId: number; delta: number; reason: string; refType: string; refId: string }) {
+    const exists = this.pointLedger.some(
+      (row) =>
+        row.userId === input.userId &&
+        row.reason === input.reason &&
+        row.refType === input.refType &&
+        row.refId === input.refId
+    );
+    if (exists) return { ok: true, awarded: false };
+    this.pointLedger.push({ ...input, createdAt: this.now() });
+    return { ok: true, awarded: true };
   }
 
   logAudit(input: Omit<AuditLogRecord, "id" | "createdAt">) {
@@ -595,9 +954,14 @@ export class MemoryStoreService {
       return this.getUserById(wallet.userId)!;
     }
 
-    const short = input.address.slice(0, 6);
+    const raw = input.address.trim();
+    const defaultNickname = /^0x[0-9a-fA-F]+$/i.test(raw)
+      ? raw.slice(2).toLowerCase().slice(-6)
+      : raw.length >= 6
+        ? raw.slice(-6)
+        : raw;
     const user = this.createUserRecord({
-      nickname: `Builder ${short}`,
+      nickname: defaultNickname,
       bio: "新加入 Circuit 的链上成员"
     });
     this.createWalletRecord({
@@ -1131,6 +1495,287 @@ export class MemoryStoreService {
     return moment;
   }
 
+  private isCommentAdmin(_userId: number) {
+    // Placeholder for future admin source (env/config/role service).
+    return false;
+  }
+
+  private getMomentById(momentId: number) {
+    return this.moments.find((moment) => moment.id === momentId) ?? null;
+  }
+
+  private getMomentCommentById(commentId: number) {
+    return this.momentComments.find((comment) => comment.id === commentId) ?? null;
+  }
+
+  discoverHot(userId: number) {
+    const windowHours = 72;
+    const sinceMs = Date.now() - windowHours * 60 * 60 * 1000;
+    const isInWindow = (iso: string) => new Date(iso).getTime() >= sinceMs;
+
+    const momentIdsInWindow = new Set(this.moments.filter((m) => isInWindow(m.createdAt)).map((m) => m.id));
+    const likeCountByMoment = new Map<number, number>();
+    for (const like of this.momentLikes) {
+      if (!momentIdsInWindow.has(like.momentId)) continue;
+      likeCountByMoment.set(like.momentId, (likeCountByMoment.get(like.momentId) ?? 0) + 1);
+    }
+    const commentCountByMoment = new Map<number, number>();
+    for (const c of this.momentComments) {
+      if (!momentIdsInWindow.has(c.momentId)) continue;
+      commentCountByMoment.set(c.momentId, (commentCountByMoment.get(c.momentId) ?? 0) + 1);
+    }
+    const hotMoments = this.moments
+      .filter((m) => momentIdsInWindow.has(m.id))
+      .map((m) => {
+        const likes = likeCountByMoment.get(m.id) ?? 0;
+        const comments = commentCountByMoment.get(m.id) ?? 0;
+        const score = likes * 3 + comments * 2;
+        return {
+          id: m.id,
+          score,
+          reason: `likes=${likes}, comments=${comments}, window=${windowHours}h`,
+          moment: this.toMomentView(userId, m)
+        };
+      })
+      .sort((a, b) => {
+        if (b.score !== a.score) return b.score - a.score;
+        return a.id - b.id;
+      })
+      .slice(0, 10);
+
+    const groupIds = this.conversations.filter((c) => c.kind === "group").map((c) => c.id);
+    const msgCountByConv = new Map<number, number>();
+    const sendersByConv = new Map<number, Set<number>>();
+    for (const msg of this.messages) {
+      if (!groupIds.includes(msg.conversationId)) continue;
+      if (!isInWindow(msg.createdAt)) continue;
+      msgCountByConv.set(msg.conversationId, (msgCountByConv.get(msg.conversationId) ?? 0) + 1);
+      const set = sendersByConv.get(msg.conversationId) ?? new Set<number>();
+      set.add(msg.senderId);
+      sendersByConv.set(msg.conversationId, set);
+    }
+    const hotGroups = this.conversations
+      .filter((c) => c.kind === "group")
+      .map((c) => {
+        const messages = msgCountByConv.get(c.id) ?? 0;
+        const activeSenders = sendersByConv.get(c.id)?.size ?? 0;
+        const score = messages + activeSenders * 2;
+        return { id: c.id, score, reason: `messages=${messages}, activeSenders=${activeSenders}, window=${windowHours}h`, group: c };
+      })
+      .sort((a, b) => {
+        if (b.score !== a.score) return b.score - a.score;
+        return a.id - b.id;
+      })
+      .slice(0, 10);
+
+    const interaction = new Map<number, { likes: number; comments: number; messages: number }>();
+    for (const like of this.momentLikes) {
+      if (!isInWindow(like.createdAt)) continue;
+      const prev = interaction.get(like.userId) ?? { likes: 0, comments: 0, messages: 0 };
+      interaction.set(like.userId, { ...prev, likes: prev.likes + 1 });
+    }
+    for (const c of this.momentComments) {
+      if (!isInWindow(c.createdAt)) continue;
+      const prev = interaction.get(c.authorId) ?? { likes: 0, comments: 0, messages: 0 };
+      interaction.set(c.authorId, { ...prev, comments: prev.comments + 1 });
+    }
+    for (const msg of this.messages) {
+      if (!isInWindow(msg.createdAt)) continue;
+      const prev = interaction.get(msg.senderId) ?? { likes: 0, comments: 0, messages: 0 };
+      interaction.set(msg.senderId, { ...prev, messages: prev.messages + 1 });
+    }
+    const recommendedUsers = Array.from(interaction.entries())
+      .map(([id, parts]) => {
+        const score = parts.likes + parts.comments * 2 + parts.messages;
+        return {
+          id,
+          score,
+          reason: `likesGiven=${parts.likes}, commentsWritten=${parts.comments}, messagesSent=${parts.messages}, window=${windowHours}h`,
+          user: this.toPublicUser(id)
+        };
+      })
+      .sort((a, b) => {
+        if (b.score !== a.score) return b.score - a.score;
+        return a.id - b.id;
+      })
+      .slice(0, 10);
+
+    return {
+      ok: true,
+      windowHours,
+      hotMoments,
+      hotGroups,
+      recommendedUsers
+    };
+  }
+
+  toggleMomentLike(userId: number, momentId: number) {
+    const moment = this.getMomentById(momentId);
+    if (!moment) throw new Error("动态不存在");
+    const existingIndex = this.momentLikes.findIndex((like) => like.momentId === momentId && like.userId === userId);
+    if (existingIndex >= 0) {
+      this.momentLikes.splice(existingIndex, 1);
+      return { liked: false, count: this.momentLikes.filter((like) => like.momentId === momentId).length };
+    }
+    this.momentLikes.push({ momentId, userId, createdAt: this.now() });
+    return { liked: true, count: this.momentLikes.filter((like) => like.momentId === momentId).length };
+  }
+
+  toggleMomentCommentLike(userId: number, momentId: number, commentId: number) {
+    const moment = this.getMomentById(momentId);
+    if (!moment) throw new Error("动态不存在");
+    const comment = this.getMomentCommentById(commentId);
+    if (!comment || comment.momentId !== momentId) throw new Error("评论不存在");
+    const existingIndex = this.momentCommentLikes.findIndex((like) => like.commentId === commentId && like.userId === userId);
+    if (existingIndex >= 0) {
+      this.momentCommentLikes.splice(existingIndex, 1);
+      return { liked: false, count: this.momentCommentLikes.filter((like) => like.commentId === commentId).length };
+    }
+    this.momentCommentLikes.push({ commentId, userId, createdAt: this.now() });
+    return { liked: true, count: this.momentCommentLikes.filter((like) => like.commentId === commentId).length };
+  }
+
+  toggleMomentCommentPin(userId: number, momentId: number, commentId: number) {
+    const moment = this.getMomentById(momentId);
+    if (!moment) throw new Error("动态不存在");
+    if (moment.authorId !== userId) throw new Error("仅作者可置顶评论");
+    const comment = this.getMomentCommentById(commentId);
+    if (!comment || comment.momentId !== momentId) throw new Error("评论不存在");
+    const existing = this.momentCommentPins.get(momentId);
+    if (existing?.commentId === commentId) {
+      this.momentCommentPins.delete(momentId);
+      return { pinned: false };
+    }
+    this.momentCommentPins.set(momentId, { momentId, commentId, pinnedByUserId: userId, pinnedAt: this.now() });
+    return { pinned: true };
+  }
+
+  createMomentComment(
+    userId: number,
+    input: { momentId: number; content: string; parentCommentId?: number | null }
+  ) {
+    const moment = this.getMomentById(input.momentId);
+    if (!moment) {
+      throw new Error("动态不存在");
+    }
+    const content = input.content.trim();
+    if (!content) {
+      throw new Error("评论内容不能为空");
+    }
+    const parentCommentId = input.parentCommentId ?? null;
+    if (parentCommentId) {
+      const parent = this.getMomentCommentById(parentCommentId);
+      if (!parent || parent.momentId !== input.momentId) {
+        throw new Error("回复目标不存在");
+      }
+    }
+    const comment: MomentCommentRecord = {
+      id: this.momentCommentSeq++,
+      momentId: input.momentId,
+      authorId: userId,
+      content,
+      parentCommentId,
+      createdAt: this.now()
+    };
+    this.momentComments.push(comment);
+    return comment;
+  }
+
+  private toMomentCommentView(userId: number, comment: MomentCommentRecord): MomentCommentView {
+    const moment = this.getMomentById(comment.momentId);
+    if (!moment) {
+      throw new Error("动态不存在");
+    }
+    const canDelete =
+      comment.authorId === userId || moment.authorId === userId || this.isCommentAdmin(userId);
+    return {
+      id: comment.id,
+      momentId: comment.momentId,
+      content: comment.content,
+      createdAt: comment.createdAt,
+      parentCommentId: comment.parentCommentId,
+      author: this.toPublicUser(comment.authorId),
+      mine: comment.authorId === userId,
+      canDelete,
+      likeCount: this.momentCommentLikes.filter((like) => like.commentId === comment.id).length,
+      likedByMe: this.momentCommentLikes.some((like) => like.commentId === comment.id && like.userId === userId),
+      pinned: this.momentCommentPins.get(comment.momentId)?.commentId === comment.id,
+      replies: []
+    };
+  }
+
+  listMomentComments(userId: number, momentId: number): MomentCommentView[] {
+    const moment = this.getMomentById(momentId);
+    if (!moment) {
+      throw new Error("动态不存在");
+    }
+    const views = this.momentComments
+      .filter((comment) => comment.momentId === momentId)
+      .sort((left, right) => left.id - right.id)
+      .map((comment) => this.toMomentCommentView(userId, comment));
+    const byId = new Map<number, MomentCommentView>();
+    views.forEach((view) => byId.set(view.id, view));
+    const roots: MomentCommentView[] = [];
+    views.forEach((view) => {
+      if (!view.parentCommentId) {
+        roots.push(view);
+        return;
+      }
+      const parent = byId.get(view.parentCommentId);
+      if (!parent) {
+        roots.push(view);
+        return;
+      }
+      parent.replies.push(view);
+    });
+    const pinnedId = this.momentCommentPins.get(momentId)?.commentId ?? null;
+    const score = (comment: MomentCommentView) => comment.likeCount ?? 0;
+    roots.sort((a, b) => {
+      if (pinnedId && a.id === pinnedId) return -1;
+      if (pinnedId && b.id === pinnedId) return 1;
+      const diff = score(b) - score(a);
+      if (diff !== 0) return diff;
+      const ta = new Date(a.createdAt).getTime();
+      const tb = new Date(b.createdAt).getTime();
+      if (ta !== tb) return ta - tb;
+      return a.id - b.id;
+    });
+    return roots;
+  }
+
+  deleteMomentComment(userId: number, momentId: number, commentId: number) {
+    const moment = this.getMomentById(momentId);
+    if (!moment) {
+      throw new Error("动态不存在");
+    }
+    const comment = this.getMomentCommentById(commentId);
+    if (!comment || comment.momentId !== momentId) {
+      throw new Error("评论不存在");
+    }
+    const canDelete =
+      comment.authorId === userId || moment.authorId === userId || this.isCommentAdmin(userId);
+    if (!canDelete) {
+      throw new Error("无权限删除评论");
+    }
+
+    const toDeleteIds = new Set<number>([commentId]);
+    let added = true;
+    while (added) {
+      added = false;
+      for (const item of this.momentComments) {
+        if (item.parentCommentId && toDeleteIds.has(item.parentCommentId) && !toDeleteIds.has(item.id)) {
+          toDeleteIds.add(item.id);
+          added = true;
+        }
+      }
+    }
+    for (let index = this.momentComments.length - 1; index >= 0; index -= 1) {
+      if (toDeleteIds.has(this.momentComments[index].id)) {
+        this.momentComments.splice(index, 1);
+      }
+    }
+  }
+
   listMoments(userId: number, beforeId?: number) {
     let items = this.moments;
     if (beforeId) {
@@ -1148,7 +1793,10 @@ export class MemoryStoreService {
       images: moment.uploadIds
         .map((uploadId) => this.getUpload(uploadId))
         .filter((upload): upload is UploadRecord => Boolean(upload)),
-      mine: moment.authorId === userId
+      mine: moment.authorId === userId,
+      likeCount: this.momentLikes.filter((like) => like.momentId === moment.id).length,
+      commentCount: this.momentComments.filter((comment) => comment.momentId === moment.id).length,
+      likedByMe: this.momentLikes.some((like) => like.momentId === moment.id && like.userId === userId)
     };
   }
 

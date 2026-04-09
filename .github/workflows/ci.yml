@@ -1,0 +1,31 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main, master]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+      - name: Build web workspace
+        run: npm run build --workspace @cx/web
+      - name: Run API integration tests
+        run: npm run test --workspace @cx/api
+      - name: Run CI test suite
+        run: npm run test:ci
+      - name: Run release gate
+        run: npm run release:gate

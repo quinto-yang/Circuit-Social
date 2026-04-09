@@ -12,7 +12,7 @@
     "dev:web": "npm run dev --workspace @cx/web",
     "dev:api": "npm run start:dev --workspace @cx/api",
     "e2e:run": "playwright test --project=smoke --project=mobile-smoke",
-    "e2e:demo": "playwright test --project=demo-smoke",
+    "e2e:demo": "npm run build:sdk && playwright test --project=demo-smoke",
     "wallet:run": "playwright test --project=wallet-metamask",
     "build": "npm run build --workspace @cx/api && npm run build --workspace @cx/web",
     "typecheck": "npm run typecheck --workspace @cx/api && npm run typecheck --workspace @cx/web",

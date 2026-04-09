@@ -19,8 +19,8 @@ export function TabButton({ active, label, icon, badge, dot, onClick }: TabButto
       className={cn(
         "relative inline-flex min-h-0 flex-col items-center justify-center rounded-xl px-1.5 py-0.5 text-[11px] font-medium leading-tight transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-jade/40",
         active
-          ? "bg-[linear-gradient(180deg,rgba(25,195,125,0.2)_0%,rgba(25,195,125,0.1)_100%)] text-jade-deep"
-          : "text-slate-400"
+          ? "bg-[linear-gradient(180deg,rgba(25,195,125,0.22)_0%,rgba(25,195,125,0.12)_100%)] text-jade-deep"
+          : "text-slate-600"
       )}
     >
       {dot ? (

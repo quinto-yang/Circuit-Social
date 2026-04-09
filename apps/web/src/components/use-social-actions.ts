@@ -54,11 +54,20 @@ export function useSocialActions({
   }, [disconnect, setActiveConversation, setMessages, setSession, setStatus]);
 
   const submitFriendRequest = useCallback(async () => {
-    if (!friendTarget.trim()) return;
+    const normalizedTarget = friendTarget.trim();
+    if (!normalizedTarget) return;
+    if (normalizedTarget.includes("...") || normalizedTarget.includes("…")) {
+      setStatus("请输入完整钱包地址，不支持省略显示（...）");
+      return;
+    }
+    if (/^0x/i.test(normalizedTarget) && !/^0x[a-fA-F0-9]{40}$/.test(normalizedTarget)) {
+      setStatus("钱包地址格式无效，请输入完整 42 位地址");
+      return;
+    }
     setBusy("friend-request");
     try {
       await api.post("/friend-requests", {
-        target: friendTarget.trim()
+        target: normalizedTarget
       });
       setFriendTarget("");
       setModal(null);

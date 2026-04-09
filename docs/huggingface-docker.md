@@ -5,6 +5,7 @@
 - 外部暴露端口：`$PORT`（默认 `7860`）
 - 容器内部：Web 监听 `$PORT`，API 监听 `4000`
 - 前端以 `same-origin` 访问 `/api/*`，由 Next.js rewrite 转发到内部 API（`127.0.0.1:4000`）
+- 若浏览器网络面板里仍出现 `http://localhost:4000/api/...`，通常是旧镜像缓存导致；推送后等待 Space 完整重建即可恢复同源请求。
 
 ## 1) Space 配置
 

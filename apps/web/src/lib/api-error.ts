@@ -23,7 +23,9 @@ export function mapApiError(error: unknown, fallback = "请求失败") {
   const status = error instanceof ApiError ? error.status : undefined;
 
   if (code === AUTH_ERROR_CODES.UNKNOWN_API_ERROR) {
-    return fallback;
+    // Backward-compatible unknown code may still carry useful server message
+    // (e.g. "好友申请已存在"). Prefer it over a generic fallback.
+    return message && message !== "UNKNOWN_API_ERROR" ? message : fallback;
   }
 
   if (code === AUTH_ERROR_CODES.SOLANA_DISABLED) {

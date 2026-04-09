@@ -61,11 +61,16 @@ export function useRealtimeSync({
     prevHadSessionRef.current = true;
     const isHuggingFaceSpace =
       typeof window !== "undefined" && window.location.hostname.endsWith(".hf.space");
-    const transports = isHuggingFaceSpace ? ["polling"] : ["websocket", "polling"];
-
+    if (isHuggingFaceSpace) {
+      // HF Spaces often rewrites/proxies long-polling websocket traffic in ways that
+      // produce noisy 404/400 responses. Core app features work without realtime,
+      // so we disable socket transport there for stability.
+      setSocketConnected(false);
+      return;
+    }
     const socket = io(apiOrigin, {
       withCredentials: true,
-      transports
+      transports: ["websocket", "polling"]
     });
     socketRef.current = socket;
 

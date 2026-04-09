@@ -354,7 +354,7 @@ export function DiscoverTab({
                 }
               }}
               placeholder={t("分享新鲜事、群组动态或产品进展...", "Share updates, group news, or product progress...")}
-              className="mt-2 h-28 w-full resize-none rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm outline-none transition focus:border-jade/40 focus:bg-white"
+              className="mt-2 h-28 w-full resize-none rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 caret-slate-900 outline-none transition focus:border-jade/40 focus:bg-white"
             />
             <div className="mt-3 flex items-center justify-between gap-3">
               <label className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition active:scale-[0.99]">
@@ -468,6 +468,11 @@ export function DiscoverTab({
                             <button
                               type="button"
                               onClick={() => void toggleMomentLike(moment.id)}
+                              aria-label={
+                                typeof moment.likeCount === "number"
+                                  ? t(`点赞 ${moment.likeCount}`, `Like ${moment.likeCount}`)
+                                  : t("点赞", "Like")
+                              }
                               className={cn(
                                 "inline-flex items-center gap-1.5 rounded-full border bg-white px-2.5 py-1 text-[11px] font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-jade/40",
                                 moment.likedByMe
@@ -481,8 +486,7 @@ export function DiscoverTab({
                                   moment.likedByMe ? "fill-jade text-jade-deep" : "text-slate-500"
                                 )}
                               />
-                              {t("点赞", "Like")}
-                              {typeof moment.likeCount === "number" ? ` (${moment.likeCount})` : ""}
+                              <span>{typeof moment.likeCount === "number" ? moment.likeCount : 0}</span>
                             </button>
                             <button
                               type="button"
@@ -496,15 +500,17 @@ export function DiscoverTab({
                                   void loadMomentComments(moment.id);
                                 }
                               }}
+                              aria-label={t("评论", "Comments")}
                               className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-medium text-slate-600 transition hover:border-jade/30 hover:text-jade-deep focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-jade/40"
                             >
                               <MessageCircle className="h-3.5 w-3.5" />
-                              {t("评论", "Comments")}{" "}
-                              {momentComments[moment.id]
-                                ? `(${countMomentComments(momentComments[moment.id] ?? [])})`
-                                : typeof moment.commentCount === "number"
-                                  ? `(${moment.commentCount})`
-                                  : ""}
+                              <span>
+                                {momentComments[moment.id]
+                                  ? countMomentComments(momentComments[moment.id] ?? [])
+                                  : typeof moment.commentCount === "number"
+                                    ? moment.commentCount
+                                    : 0}
+                              </span>
                             </button>
                             {momentCommentsLoading[moment.id] ? (
                               <span className="text-[11px] text-slate-500">{t("加载中...", "Loading...")}</span>
@@ -542,7 +548,7 @@ export function DiscoverTab({
                                     }))
                                   }
                                   placeholder={t("写下你的评论...", "Write a comment...")}
-                                  className="h-16 w-full resize-none rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-2 text-[12px] outline-none transition focus:border-jade/40 focus:bg-white"
+                                  className="h-16 w-full resize-none rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-2 text-[12px] text-slate-900 placeholder:text-slate-400 caret-slate-900 outline-none transition focus:border-jade/40 focus:bg-white"
                                 />
                                 <button
                                   type="button"

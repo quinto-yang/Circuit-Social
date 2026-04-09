@@ -314,7 +314,7 @@ export function AppModals({
               <textarea
                 value={profileForm.bio}
                 onChange={(event) => setProfileForm((previous: any) => ({ ...previous, bio: event.target.value.slice(0, 160) }))}
-                className="h-24 w-full resize-none rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition focus:border-jade/40 focus:bg-white"
+                className="h-24 w-full resize-none rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 placeholder:text-slate-400 caret-slate-900 outline-none transition focus:border-jade/40 focus:bg-white"
                 placeholder={t("例如：我是 Circuit Builder，关注链上社交。", "e.g. Circuit builder focused on on-chain social.")}
               />
               <div className="mt-1 text-right text-[10px] text-slate-500">{profileForm.bio.length}/160</div>
@@ -405,7 +405,7 @@ export function AppModals({
                     primaryWalletId: Number(event.target.value)
                   }))
                 }
-                className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none"
+                className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none"
               >
                 {session.wallets.map((wallet: any) => (
                   <option key={wallet.id} value={wallet.id}>
@@ -437,7 +437,7 @@ export function AppModals({
             value={feedbackDraft}
             onChange={(event) => setFeedbackDraft(event.target.value)}
             placeholder={t("例如：希望优化哪些交互、功能或视觉细节...", "e.g. Which interactions or features should be improved?")}
-            className="h-28 w-full resize-none rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition focus:border-jade/40 focus:bg-white"
+            className="h-28 w-full resize-none rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 placeholder:text-slate-400 caret-slate-900 outline-none transition focus:border-jade/40 focus:bg-white"
           />
         </ModalCard>
       )}

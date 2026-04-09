@@ -63,7 +63,7 @@ export function ChatsTab({
             aria-label={t("搜索会话或消息", "Search conversations or messages")}
             inputMode="search"
             placeholder={t("搜索会话或消息...", "Search conversations...")}
-            className="h-9 w-full bg-transparent text-sm text-slate-800 outline-none placeholder:text-slate-400 focus-visible:outline-none focus-visible:ring-0"
+            className="h-9 w-full bg-transparent text-sm text-slate-800 placeholder:text-slate-400 caret-slate-800 outline-none focus-visible:outline-none focus-visible:ring-0"
           />
           {chatSearchQuery.trim() ? (
             <button

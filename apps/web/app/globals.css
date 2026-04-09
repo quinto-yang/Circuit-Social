@@ -131,6 +131,17 @@ textarea {
   font: inherit;
 }
 
+input,
+textarea {
+  color: var(--ink);
+  caret-color: var(--ink);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--muted);
+}
+
 @keyframes message-pop {
   0% {
     opacity: 0;

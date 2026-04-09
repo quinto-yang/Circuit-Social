@@ -1,3 +1,14 @@
+---
+title: Wx
+emoji: 🚀
+colorFrom: yellow
+colorTo: yellow
+sdk: docker
+pinned: false
+license: apache-2.0
+short_description: 链上wx
+---
+
 # Circuit Social
 
 多链社交 H5 MVP。项目采用 `Next.js 15 + Tailwind + wagmi + SIWE` 前端和 `NestJS + WebSocket` 后端，保留“链上身份 + 安全会话”入口，同时把第一版重心放在社交闭环。

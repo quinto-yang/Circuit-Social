@@ -54,7 +54,7 @@ export function MomentCommentsTree({
                   </span>
                 ) : null}
               </div>
-              <div className="text-[10px] text-slate-400">{comment.createdAt}</div>
+              <div className="text-[10px] text-slate-500">{comment.createdAt}</div>
             </div>
             <div className="inline-flex items-center gap-1">
               <button

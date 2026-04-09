@@ -463,6 +463,37 @@ export function AppShell(props?: { initialTab?: TabKey; initialContactsView?: "c
   }, [activeConversation]);
 
   useEffect(() => {
+    if (!activeConversation) return;
+    if (typeof window === "undefined") return;
+    let startX = 0;
+    let startY = 0;
+    let tracking = false;
+    const onTouchStart = (event: TouchEvent) => {
+      const touch = event.touches[0];
+      if (!touch) return;
+      startX = touch.clientX;
+      startY = touch.clientY;
+      tracking = startX <= 24;
+    };
+    const onTouchMove = (event: TouchEvent) => {
+      if (!tracking) return;
+      const touch = event.touches[0];
+      if (!touch) return;
+      const deltaX = touch.clientX - startX;
+      const deltaY = touch.clientY - startY;
+      if (deltaX > 16 && Math.abs(deltaX) > Math.abs(deltaY)) {
+        event.preventDefault();
+      }
+    };
+    window.addEventListener("touchstart", onTouchStart, { passive: true });
+    window.addEventListener("touchmove", onTouchMove, { passive: false });
+    return () => {
+      window.removeEventListener("touchstart", onTouchStart);
+      window.removeEventListener("touchmove", onTouchMove);
+    };
+  }, [activeConversation]);
+
+  useEffect(() => {
     if (!session) return;
     setProfileForm({
       nickname: session.user.nickname,
@@ -879,7 +910,7 @@ export function AppShell(props?: { initialTab?: TabKey; initialContactsView?: "c
             <div className="w-full rounded-[26px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.97)_0%,rgba(241,244,246,0.95)_100%)] p-3 text-slate-900 shadow-[0_26px_60px_rgba(0,0,0,0.22)] sm:rounded-[30px] sm:p-4 sm:shadow-[0_34px_80px_rgba(0,0,0,0.26)]">
               <div className="space-y-2.5 sm:space-y-3">
                 <div className="rounded-[18px] bg-[linear-gradient(180deg,rgba(15,23,42,0.02)_0%,rgba(15,23,42,0.05)_100%)] px-3 py-2.5 sm:rounded-[20px] sm:px-3.5 sm:py-3">
-                  <div className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400 sm:text-[11px] sm:tracking-[0.24em]">
+                  <div className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-500 sm:text-[11px] sm:tracking-[0.24em]">
                     {t("钱包登录", "Wallet Sign-In")}
                   </div>
                   <p className="mt-1 text-[13px] font-semibold leading-snug text-slate-700 sm:text-[14px] sm:leading-relaxed">
@@ -1045,7 +1076,7 @@ export function AppShell(props?: { initialTab?: TabKey; initialContactsView?: "c
                     </p>
                   ) : null}
 
-                  <p className="mt-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">
+                  <p className="mt-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">
                     {t("钱包来源", "Wallet")}
                   </p>
                   <div className="mt-1.5 grid grid-cols-2 gap-2">
@@ -1417,8 +1448,11 @@ export function AppShell(props?: { initialTab?: TabKey; initialContactsView?: "c
   }
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-[430px] px-3 py-2">
-      <section className="relative flex h-[calc(100dvh-1rem)] w-full flex-col overflow-hidden rounded-2xl border border-white/60 bg-[rgba(255,255,255,0.78)] shadow-panel backdrop-blur">
+    <main className="mx-auto flex min-h-screen w-full max-w-[430px] overflow-x-hidden px-3 py-2">
+      <section
+        className="relative flex h-[calc(100dvh-1rem)] w-full flex-col overflow-hidden rounded-2xl border border-white/60 bg-[rgba(255,255,255,0.78)] shadow-panel backdrop-blur"
+        style={{ touchAction: activeConversation ? "pan-y" : "auto" }}
+      >
         <div
           aria-hidden="true"
           className="pointer-events-none absolute inset-x-6 top-2 h-20 rounded-full bg-jade/10 blur-3xl"
@@ -1739,6 +1773,7 @@ function ChatRoom(props: {
   const [memberActionTarget, setMemberActionTarget] = useState<GroupMember | null>(null);
   const [memberProfileOpen, setMemberProfileOpen] = useState(false);
   const [emojiOpen, setEmojiOpen] = useState(false);
+  const [keyboardInset, setKeyboardInset] = useState(0);
   const [decisionCollapsed, setDecisionCollapsed] = useState(false);
   const [activeDecisionSectionId, setActiveDecisionSectionId] = useState<string | null>(null);
   const [activeDecisionQuestionId, setActiveDecisionQuestionId] = useState<string | null>(null);
@@ -1946,6 +1981,31 @@ function ChatRoom(props: {
     }
   }, [isConciergeDm]);
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const syncInset = () => {
+      const rawInset = window.innerHeight - vv.height - vv.offsetTop;
+      const nextInset = Math.max(0, Math.min(420, Math.round(rawInset)));
+      setKeyboardInset(nextInset);
+    };
+    syncInset();
+    vv.addEventListener("resize", syncInset);
+    vv.addEventListener("scroll", syncInset);
+    window.addEventListener("orientationchange", syncInset);
+    return () => {
+      vv.removeEventListener("resize", syncInset);
+      vv.removeEventListener("scroll", syncInset);
+      window.removeEventListener("orientationchange", syncInset);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (keyboardInset <= 0) return;
+    messageEndRef.current?.scrollIntoView({ block: "end", behavior: "smooth" });
+  }, [keyboardInset]);
+
   return (
     <div className="relative z-10 flex h-full flex-col">
       <ChatRoomHeader
@@ -2033,26 +2093,33 @@ function ChatRoom(props: {
         members={props.members}
       />
 
-      <ChatComposer
-        t={t}
-        conversationKind={props.conversation.kind}
-        encryptionEnabled={props.encryptionEnabled}
-        encryptionFallback={props.encryptionFallback}
-        isConciergeDm={isConciergeDm}
-        draft={props.draft}
-        setDraft={props.setDraft}
-        onSend={props.onSend}
-        busy={props.busy}
-        canSend={canSend}
-        emojiOpen={emojiOpen}
-        setEmojiOpen={setEmojiOpen}
-        autoScrollLocked={autoScrollLocked}
-        scrollToLatestMessage={scrollToLatestMessage}
-        mentionCandidates={mentionCandidates}
-        insertMention={insertMention}
-        shortAddress={shortAddress}
-        emojiList={emojiList}
-      />
+      <div
+        style={{
+          paddingBottom: keyboardInset > 0 ? `${keyboardInset}px` : undefined
+        }}
+        className="transition-[padding-bottom] duration-200 ease-out"
+      >
+        <ChatComposer
+          t={t}
+          conversationKind={props.conversation.kind}
+          encryptionEnabled={props.encryptionEnabled}
+          encryptionFallback={props.encryptionFallback}
+          isConciergeDm={isConciergeDm}
+          draft={props.draft}
+          setDraft={props.setDraft}
+          onSend={props.onSend}
+          busy={props.busy}
+          canSend={canSend}
+          emojiOpen={emojiOpen}
+          setEmojiOpen={setEmojiOpen}
+          autoScrollLocked={autoScrollLocked}
+          scrollToLatestMessage={scrollToLatestMessage}
+          mentionCandidates={mentionCandidates}
+          insertMention={insertMention}
+          shortAddress={shortAddress}
+          emojiList={emojiList}
+        />
+      </div>
 
       <ChatGroupPanels
         open={props.groupManageOpen}

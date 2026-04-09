@@ -54,7 +54,7 @@ export function ChatMessageList({
               </button>
             )}
             <div className={cn("max-w-[80%]", message.mine ? "order-first" : "")}>
-              {!message.mine && <div className="mb-1 px-1 text-[11px] text-slate-400">{message.sender.nickname}</div>}
+              {!message.mine && <div className="mb-1 px-1 text-[11px] text-slate-500">{message.sender.nickname}</div>}
               <div
                 className={cn(
                   "rounded-[20px] px-3 py-2 text-[14px] leading-snug shadow-soft motion-safe:animate-[message-pop_220ms_ease-out]",
@@ -65,7 +65,7 @@ export function ChatMessageList({
               >
                 {message.content}
               </div>
-              <div className={cn("mt-1 px-1 text-[10px] text-slate-400", message.mine ? "text-right" : "")}>
+              <div className={cn("mt-1 px-1 text-[10px] text-slate-500", message.mine ? "text-right" : "")}>
                 {formatMessageTime(message.createdAt)}
               </div>
               {message.mentionUserIds.length > 0 && (

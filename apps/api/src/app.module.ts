@@ -81,10 +81,17 @@ function validateEnv(env: Record<string, unknown>) {
         limit: 45
       }
     ]),
-    ServeStaticModule.forRoot({
-      rootPath: uploadsRoot,
-      serveRoot: "/static/uploads"
-    }),
+    ServeStaticModule.forRoot(
+      {
+        rootPath: uploadsRoot,
+        serveRoot: "/static/uploads"
+      },
+      {
+        // Compatible with deployments that proxy backend under `/api/*`.
+        rootPath: uploadsRoot,
+        serveRoot: "/api/static/uploads"
+      }
+    ),
     PrismaModule,
     HealthModule,
     StoreModule,

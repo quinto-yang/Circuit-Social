@@ -116,7 +116,7 @@ export function ChatComposer({
                 ? t("发送消息，输入 @ 提及群友", "Type message, @ to mention")
                 : t("向 Circuit Concierge 发送消息...", "Message Circuit Concierge...")
             }
-            className="h-12 w-full rounded-[22px] border border-slate-200 bg-slate-50 px-4 text-[14px] outline-none transition focus:scale-[1.01] focus:border-jade/50 focus:bg-white"
+            className="h-12 w-full rounded-[22px] border border-slate-200 bg-slate-50 px-4 text-[16px] text-slate-900 placeholder:text-slate-400 caret-slate-900 outline-none transition focus:scale-[1.01] focus:border-jade/50 focus:bg-white sm:text-[14px]"
           />
           {mentionCandidates.length > 0 && (
             <div className="absolute bottom-14 left-0 right-0 z-20 max-h-56 overflow-y-auto rounded-2xl border border-slate-200 bg-white p-2 shadow-soft">

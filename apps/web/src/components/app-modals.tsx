@@ -231,7 +231,7 @@ export function AppModals({
           actions={
             <div className="space-y-3">
               <div className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2.5">
-                <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Bind Chain Type</div>
+                <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500">Bind Chain Type</div>
                 <div className="mt-2 grid grid-cols-2 gap-2">
                   <button
                     type="button"
@@ -301,14 +301,14 @@ export function AppModals({
           }
         >
           <div className="space-y-3">
-            <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">{t("基本信息", "Basic info")}</div>
+            <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">{t("基本信息", "Basic info")}</div>
             <LabeledField label={t("显示名称", "Display name")}>
               <Input
                 value={profileForm.nickname}
                 onChange={(value) => setProfileForm((previous: any) => ({ ...previous, nickname: value.slice(0, 30) }))}
                 placeholder={t("输入显示昵称", "Display nickname")}
               />
-              <div className="mt-1 text-right text-[10px] text-slate-400">{profileForm.nickname.length}/30</div>
+              <div className="mt-1 text-right text-[10px] text-slate-500">{profileForm.nickname.length}/30</div>
             </LabeledField>
             <LabeledField label={t("个人介绍（公开可见）", "Bio (public)")}>
               <textarea
@@ -317,7 +317,7 @@ export function AppModals({
                 className="h-24 w-full resize-none rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition focus:border-jade/40 focus:bg-white"
                 placeholder={t("例如：我是 Circuit Builder，关注链上社交。", "e.g. Circuit builder focused on on-chain social.")}
               />
-              <div className="mt-1 text-right text-[10px] text-slate-400">{profileForm.bio.length}/160</div>
+              <div className="mt-1 text-right text-[10px] text-slate-500">{profileForm.bio.length}/160</div>
             </LabeledField>
             <LabeledField label={t("头像", "Avatar")}>
               <div className="flex items-center gap-3">
@@ -372,14 +372,14 @@ export function AppModals({
                 </div>
               ) : null}
             </LabeledField>
-            <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">{t("链上身份", "On-chain identity")}</div>
+            <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">{t("链上身份", "On-chain identity")}</div>
             <LabeledField label="DID URI">
               <Input
                 value={profileForm.didUri}
                 onChange={(value) => setProfileForm((previous: any) => ({ ...previous, didUri: value }))}
                 placeholder="did:ethr:sepolia:0x..."
               />
-              <div className="mt-1 flex items-center justify-between gap-2 text-[10px] text-slate-400">
+              <div className="mt-1 flex items-center justify-between gap-2 text-[10px] text-slate-500">
                 <span>{t("DID 可跨平台复用你的链上身份。", "DID can be reused across platforms.")}</span>
                 {profileForm.didUri ? (
                   <button

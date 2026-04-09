@@ -154,12 +154,12 @@ export function MeTab({
                     <div className="min-w-0">
                       <div className="font-medium text-slate-700">{row.reason}</div>
                       {row.refType && row.refId ? (
-                        <div className="mt-0.5 truncate text-[10px] text-slate-400">
+                        <div className="mt-0.5 truncate text-[10px] text-slate-500">
                           {row.refType}:{row.refId}
                         </div>
                       ) : null}
                       {row.createdAt ? (
-                        <div className="mt-0.5 text-[10px] text-slate-400">
+                        <div className="mt-0.5 text-[10px] text-slate-500">
                           {formatTime(String(row.createdAt), locale)}
                         </div>
                       ) : null}

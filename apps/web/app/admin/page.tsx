@@ -2088,7 +2088,7 @@ export default function AdminPage() {
           <button
             type="button"
             onClick={() => showNextToast()}
-            className="ml-3 text-slate-300 hover:text-white"
+            className="ml-3 text-white/80 hover:text-white"
             aria-label="关闭提示"
           >
             ×

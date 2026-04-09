@@ -26,7 +26,7 @@ export function DataRow({
       )}
     >
       <div className="min-w-0">
-        <div className="text-[11px] uppercase tracking-[0.14em] text-slate-400">{label}</div>
+        <div className="text-[11px] uppercase tracking-[0.14em] text-slate-500">{label}</div>
         <div className="mt-0.5 break-all text-sm text-slate-700">{displayValue ?? value}</div>
       </div>
       {copyable && (

@@ -38,7 +38,7 @@ export function ChatRoomHeader({
             {t("官方智能助手", "AI Concierge")}
           </div>
         ) : (
-          <div className="text-[10px] uppercase tracking-[0.18em] text-slate-400">
+          <div className="text-[10px] uppercase tracking-[0.18em] text-slate-500">
             {conversation.kind === "group" ? t("群聊", "Group") : t("私聊", "Direct")}
           </div>
         )}

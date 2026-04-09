@@ -205,10 +205,10 @@ export function DiscoverTab({
                             >
                               <div className="min-w-0">
                                 <div className="flex items-center gap-1.5">
-                                  <Users className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+                                  <Users className="h-3.5 w-3.5 shrink-0 text-slate-500" />
                                   <span className="text-xs font-semibold text-slate-800">{item.group.title}</span>
                                 </div>
-                                <div className="mt-1 line-clamp-2 text-[10px] text-slate-400">{item.reason}</div>
+                                <div className="mt-1 line-clamp-2 text-[10px] text-slate-500">{item.reason}</div>
                               </div>
                               <span className="shrink-0 rounded-full bg-sky-100 px-2 py-0.5 text-[10px] font-semibold text-sky-800">
                                 {item.score}
@@ -507,7 +507,7 @@ export function DiscoverTab({
                                   : ""}
                             </button>
                             {momentCommentsLoading[moment.id] ? (
-                              <span className="text-[11px] text-slate-400">{t("加载中...", "Loading...")}</span>
+                              <span className="text-[11px] text-slate-500">{t("加载中...", "Loading...")}</span>
                             ) : null}
                           </div>
 

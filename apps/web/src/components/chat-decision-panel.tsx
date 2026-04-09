@@ -47,7 +47,7 @@ export function ChatDecisionPanel({
   return (
     <div className="rounded-2xl border border-slate-200/80 bg-white/85 px-3 py-2.5 shadow-soft">
       <div className="flex items-center justify-between gap-2">
-        <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">
+        <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">
           {t("Circuit 决策树助手", "Circuit decision tree")}
         </div>
         <button
@@ -64,7 +64,7 @@ export function ChatDecisionPanel({
           {recentDecisionPath ? (
             <div className="mt-2 rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-2">
               <div className="flex items-center justify-between gap-2">
-                <div className="text-[10px] uppercase tracking-[0.14em] text-slate-400">{t("最近路径", "Recent path")}</div>
+                <div className="text-[10px] uppercase tracking-[0.14em] text-slate-500">{t("最近路径", "Recent path")}</div>
                 <button
                   type="button"
                   onClick={onClearRecentPath}
@@ -74,7 +74,7 @@ export function ChatDecisionPanel({
                 </button>
               </div>
               <div className="mt-1 text-[11px] text-slate-600">{recentDecisionPath.questionLabel}</div>
-              <div className="mt-0.5 text-[10px] text-slate-400">
+              <div className="mt-0.5 text-[10px] text-slate-500">
                 {t("更新时间", "Updated")} · {formatRelativeTime(recentDecisionPath.updatedAt)}
               </div>
               <div className="mt-1.5 flex flex-wrap gap-1.5">

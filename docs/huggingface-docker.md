@@ -22,6 +22,7 @@
 
 - `INTERNAL_API_ORIGIN=http://127.0.0.1:4000`（默认即可）
 - `NEXT_PUBLIC_API_ORIGIN=same-origin`（默认即可）
+- `ALLOW_IN_MEMORY_STORE_IN_PRODUCTION=1`（默认已在镜像中设置；无数据库时允许 API 以内存模式启动）
 
 ## 3) 本地模拟构建（可选）
 
@@ -46,7 +47,7 @@ docker run --rm -p 7860:7860 \
 ### API 连接失败
 
 - 确认 `DATABASE_URL` 有效（若需要 DB 持久化）
-- 如仅演示可不配置 DB，服务会回退到内存模式（部分功能重启后不持久）
+- 如仅演示可不配置 DB，服务会在 `ALLOW_IN_MEMORY_STORE_IN_PRODUCTION=1` 时回退到内存模式（部分功能重启后不持久）
 
 ### CORS / Cookie 异常
 

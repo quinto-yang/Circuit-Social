@@ -26,6 +26,9 @@ function validateEnv(env: Record<string, unknown>) {
   const databaseUrl = String(env.DATABASE_URL ?? "");
   const webOrigin = String(env.WEB_ORIGIN ?? "");
   const enableSolanaLogin = String(env.ENABLE_SOLANA_LOGIN ?? "");
+  const allowInMemoryInProd = ["1", "true"].includes(
+    String(env.ALLOW_IN_MEMORY_STORE_IN_PRODUCTION ?? "").toLowerCase()
+  );
 
   if (databaseUrl) {
     try {
@@ -56,7 +59,7 @@ function validateEnv(env: Record<string, unknown>) {
     errors.push("ENABLE_SOLANA_LOGIN 仅支持 0/1/true/false");
   }
 
-  if (nodeEnv === "production" && !databaseUrl) {
+  if (nodeEnv === "production" && !databaseUrl && !allowInMemoryInProd) {
     errors.push("生产环境必须提供 DATABASE_URL");
   }
 

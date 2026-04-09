@@ -46,6 +46,7 @@ ENV API_PORT=4000
 ENV WEB_ORIGIN=https://localhost
 ENV NEXT_PUBLIC_API_ORIGIN=same-origin
 ENV INTERNAL_API_ORIGIN=http://127.0.0.1:4000
+ENV ALLOW_IN_MEMORY_STORE_IN_PRODUCTION=1
 
 # Use api-builder node_modules to include Prisma generated client.
 COPY --from=api-builder /app/node_modules node_modules

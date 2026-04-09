@@ -43,6 +43,7 @@ ENV NPM_CONFIG_UPDATE_NOTIFIER=false
 # HF Spaces Docker runtime expects app listening on $PORT (default 7860)
 ENV PORT=7860
 ENV API_PORT=4000
+ENV WEB_PORT=3000
 ENV WEB_ORIGIN=https://localhost
 ENV NEXT_PUBLIC_API_ORIGIN=same-origin
 ENV INTERNAL_API_ORIGIN=http://127.0.0.1:4000

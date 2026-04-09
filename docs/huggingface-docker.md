@@ -1,11 +1,10 @@
 # Hugging Face Docker 部署
 
-本项目提供 `Dockerfile.hf`，用于在 Hugging Face Spaces（Docker 模式）单容器部署 **Web + API**：
+本项目提供 `Dockerfile.hf`，用于在 Hugging Face Spaces（Docker 模式）单容器部署 **Web + API**（含容器内 edge proxy）：
 
 - 外部暴露端口：`$PORT`（默认 `7860`）
-- 容器内部：Web 监听 `$PORT`，API 监听 `4000`
-- 前端以 `same-origin` 访问 `/api/*`，由 Next.js rewrite 转发到内部 API（`127.0.0.1:4000`）
-- 若浏览器网络面板里仍出现 `http://localhost:4000/api/...`，通常是旧镜像缓存导致；推送后等待 Space 完整重建即可恢复同源请求。
+- 容器内部：edge proxy 监听 `7860`，Web 监听 `3000`，API 监听 `4000`
+- 浏览器始终访问同源 `/api/*` 与 `/socket.io/*`，由 edge proxy 直转 API（保留 `Set-Cookie`）
 
 ## 1) Space 配置
 
@@ -24,6 +23,7 @@
 - `INTERNAL_API_ORIGIN=http://127.0.0.1:4000`（默认即可）
 - `NEXT_PUBLIC_API_ORIGIN=same-origin`（默认即可）
 - `ALLOW_IN_MEMORY_STORE_IN_PRODUCTION=1`（默认已在镜像中设置；无数据库时允许 API 以内存模式启动）
+- `WEB_PORT=3000`、`API_PORT=4000`（默认即可）
 
 ## 3) 本地模拟构建（可选）
 
